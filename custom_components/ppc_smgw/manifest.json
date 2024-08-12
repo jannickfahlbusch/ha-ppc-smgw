@@ -4,7 +4,8 @@
   "codeowners": ["@jannickfahlbusch"],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://jf-projects.de/no-documentation-available-yet",
+  "documentation": "https://github.com/jannickfahlbusch/ha-ppc-smgw",
+  "issue_tracker": "https://github.com/jannickfahlbusch/ha-ppc-smgw/issues",
   "iot_class": "local_polling",
   "requirements": [
     "beautifulsoup4"
