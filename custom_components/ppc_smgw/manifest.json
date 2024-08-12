@@ -1,0 +1,13 @@
+{
+  "domain": "ppc_smgw",
+  "name": "PPC SMGW",
+  "codeowners": ["@jannickfahlbusch"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://jf-projects.de/no-documentation-available-yet",
+  "iot_class": "local_polling",
+  "requirements": [
+    "beautifulsoup4"
+  ],
+  "version": "0.0.1"
+}
