@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import urllib3
 from typing import List
 import httpx
+from datetime import datetime
 
 from .reading import Reading
 from .errors import SessionCookieStillPresentError
@@ -116,11 +117,14 @@ class PPC_SMGW:
 
                 # The SMGW returns the meter values in two rows, one for the consumption and one for the feed-in
                 # We need to store the timestamp of the first row and use it for the second row
-                current_timestamp = row.find(id="table_metervalues_col_timestamp")
-                if current_timestamp is None:
+                row_timestamp = row.find(id="table_metervalues_col_timestamp")
+                if row_timestamp is None:
+                    self.logger.debug(f"Timestamp not found, using previous: {current_timestamp}")
                     current_timestamp = timestamp
                 else:
-                    timestamp = current_timestamp.string
+                    self.logger.debug(f"Found timestamp: {row_timestamp.string}")
+                    current_timestamp = datetime.strptime(row_timestamp.string, "%Y-%m-%d %H:%M:%S")
+                    timestamp = current_timestamp
 
                 readings.append(Reading(
                     value = row.find(id="table_metervalues_col_wert").string,

@@ -16,7 +16,9 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities):
     coordinator = hass.data[DOMAIN][config_entry.entry_id]
-    entities = []
+    entities = [
+        LastUpdatedSensor(coordinator, LastUpdatedSensorDescription)
+    ]
     available_sensors = None
     if hasattr(coordinator, 'ppc_smgw'):
         if hasattr(coordinator.ppc_smgw, '_readings'):
@@ -41,8 +43,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry, asyn
         entity = PPC_SMGWSensor(coordinator, description)
         entities.append(entity)
 
-    # Last update sensor
-    entities.append(LastUpdatedSensor(coordinator, LastUpdatedSensorDescription))
 
     async_add_entities(entities)
 
