@@ -19,9 +19,11 @@ DEFAULT_USERNAME = ""
 DEFAULT_PASSWORD = ""
 DEFAULT_SCAN_INTERVAL = 5
 
+
 @dataclass
 class ExtSensorEntityDescription(SensorEntityDescription):
     aliases: list[str] | None = None
+
 
 SENSOR_TYPES = [
     SensorEntityDescription(
@@ -46,10 +48,10 @@ SENSOR_TYPES = [
 ]
 
 LastUpdatedSensorDescription = SensorEntityDescription(
-        key="last_update",
-        name="Last Update",
-        icon="mdi:clock-time-eight",
-        native_unit_of_measurement=None,
-        device_class=SensorDeviceClass.TIMESTAMP,
-        state_class=SensorStateClass.MEASUREMENT
+    key="last_update",
+    name="Last Update",
+    icon="mdi:clock-time-eight",
+    native_unit_of_measurement=None,
+    device_class=SensorDeviceClass.TIMESTAMP,
+    state_class=SensorStateClass.MEASUREMENT,
 )

@@ -4,7 +4,13 @@ from datetime import timedelta
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
-from homeassistant.const import CONF_HOST, CONF_SCAN_INTERVAL, CONF_PASSWORD, CONF_USERNAME, CONF_ID
+from homeassistant.const import (
+    CONF_HOST,
+    CONF_SCAN_INTERVAL,
+    CONF_PASSWORD,
+    CONF_USERNAME,
+    CONF_ID,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.httpx_client import get_async_client
@@ -25,6 +31,7 @@ CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 
 PLATFORMS = ["sensor"]
 
+
 def mask_map(d):
     for k, v in d.copy().items():
         if isinstance(v, dict):
@@ -39,17 +46,23 @@ def mask_map(d):
             d[k] = v
     return d
 
+
 async def async_setup(hass: HomeAssistant, config: dict):
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
     global SCAN_INTERVAL
-    SCAN_INTERVAL = timedelta(minutes=config_entry.options.get(CONF_SCAN_INTERVAL,
-                                                               config_entry.data.get(CONF_SCAN_INTERVAL,
-                                                                                     DEFAULT_SCAN_INTERVAL)))
+    SCAN_INTERVAL = timedelta(
+        minutes=config_entry.options.get(
+            CONF_SCAN_INTERVAL,
+            config_entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+        )
+    )
 
-    _LOGGER.info(f"Starting PPC_SMGW with interval: {SCAN_INTERVAL} - ConfigEntry: {mask_map(dict(config_entry.as_dict()))}")
+    _LOGGER.info(
+        f"Starting PPC_SMGW with interval: {SCAN_INTERVAL} - ConfigEntry: {mask_map(dict(config_entry.as_dict()))}"
+    )
 
     if DOMAIN not in hass.data:
         value = "UNKOWN"
@@ -73,14 +86,24 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
 class PPC_SMGWLocalDataUpdateCoordinator(DataUpdateCoordinator):
     def __init__(self, hass: HomeAssistant, config_entry):
         self._host = config_entry.options.get(CONF_HOST, config_entry.data[CONF_HOST])
-        username = config_entry.options.get(CONF_USERNAME, config_entry.data[CONF_USERNAME])
-        password = config_entry.options.get(CONF_PASSWORD, config_entry.data[CONF_PASSWORD])
+        username = config_entry.options.get(
+            CONF_USERNAME, config_entry.data[CONF_USERNAME]
+        )
+        password = config_entry.options.get(
+            CONF_PASSWORD, config_entry.data[CONF_PASSWORD]
+        )
 
-        self.ppc_smgw = PPC_SMGW(hass=hass, host=self._host, username=username, password=password, websession=get_async_client(hass, verify_ssl=False), logger=_LOGGER)
+        self.ppc_smgw = PPC_SMGW(
+            hass=hass,
+            host=self._host,
+            username=username,
+            password=password,
+            websession=get_async_client(hass, verify_ssl=False),
+            logger=_LOGGER,
+        )
         self.name = config_entry.title
         self._config_entry = config_entry
         super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=SCAN_INTERVAL)
-
 
     async def init_on_load(self):
         try:
@@ -105,7 +128,9 @@ class PPC_SMGWLocalDataUpdateCoordinator(DataUpdateCoordinator):
 
 
 async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry):
-    unload_ok = await hass.config_entries.async_unload_platforms(config_entry, PLATFORMS)
+    unload_ok = await hass.config_entries.async_unload_platforms(
+        config_entry, PLATFORMS
+    )
     if unload_ok:
         if DOMAIN in hass.data and config_entry.entry_id in hass.data[DOMAIN]:
             hass.data[DOMAIN].pop(config_entry.entry_id)
@@ -117,11 +142,14 @@ async def async_reload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> 
         await asyncio.sleep(2)
         await async_setup_entry(hass, config_entry)
 
+
 class PPC_SMGWLocalEntity(Entity):
     _attr_should_poll = False
 
     def __init__(
-            self, coordinator: PPC_SMGWLocalDataUpdateCoordinator, description: EntityDescription
+        self,
+        coordinator: PPC_SMGWLocalDataUpdateCoordinator,
+        description: EntityDescription,
     ) -> None:
         self.coordinator = coordinator
         self.entity_description = description
@@ -153,7 +181,9 @@ class PPC_SMGWLocalEntity(Entity):
 
     async def async_added_to_hass(self):
         """Connect to dispatcher listening for entity data notifications."""
-        self.async_on_remove(self.coordinator.async_add_listener(self.async_write_ha_state))
+        self.async_on_remove(
+            self.coordinator.async_add_listener(self.async_write_ha_state)
+        )
 
     async def async_update(self):
         """Update entity."""
