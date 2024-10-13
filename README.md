@@ -10,6 +10,8 @@ This custom integration allows you to integrate a PPC Smart Meter Gateway into H
 
 This component is installable via [HACS](https://www.hacs.xyz/).
 
+Add the repository as a custom repository using [this guide](https://www.hacs.xyz/docs/faq/custom_repositories/).
+
 Click on the badge above or use this [link](https://my.home-assistant.io/redirect/hacs_repository/?owner=jannickfahlbusch&repository=ha-ppc-smgw) to get redirected to the HACS store from where you can install the component.
 
 Restart your instance and head over to the integration overview (Or use [this link](https://my.home-assistant.io/redirect/config_flow_start/?domain=ppc_smgw) to directly go to the configuration of this component) to start configuring the integration.
