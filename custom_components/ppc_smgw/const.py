@@ -1,27 +1,18 @@
-from typing import Final
-from dataclasses import dataclass
-
+from homeassistant.components.button import ButtonDeviceClass, ButtonEntityDescription
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntityDescription,
     SensorStateClass,
 )
+from homeassistant.const import UnitOfEnergy
 
-from homeassistant.const import (
-    UnitOfEnergy,
-)
-
-DOMAIN: Final = "ppc_smgw"
-MANUFACTURER: Final = "Power Plus Communications AG"
+DOMAIN = "ppc_smgw"
+MANUFACTURER = "Power Plus Communications AG"
 DEFAULT_NAME = "PPC SMGW"
 DEFAULT_HOST = "https://192.168.1.200/cgi-bin/hanservice.cgi"
 DEFAULT_USERNAME = ""
 DEFAULT_PASSWORD = ""
 DEFAULT_SCAN_INTERVAL = 5
-
-@dataclass
-class ExtSensorEntityDescription(SensorEntityDescription):
-    aliases: list[str] | None = None
 
 SENSOR_TYPES = [
     SensorEntityDescription(
@@ -46,10 +37,17 @@ SENSOR_TYPES = [
 ]
 
 LastUpdatedSensorDescription = SensorEntityDescription(
-        key="last_update",
-        name="Last Update",
-        icon="mdi:clock-time-eight",
-        native_unit_of_measurement=None,
-        device_class=SensorDeviceClass.TIMESTAMP,
-        state_class=SensorStateClass.MEASUREMENT
+    key="last_update",
+    name="Last Update",
+    icon="mdi:clock-time-eight",
+    native_unit_of_measurement=None,
+    device_class=SensorDeviceClass.TIMESTAMP,
+    state_class=SensorStateClass.MEASUREMENT,
+)
+
+RestartGatewayButtonDescription = ButtonEntityDescription(
+    key="restart_gateway",
+    name="Restart Gateway",
+    icon="mdi:restart",
+    device_class=ButtonDeviceClass.RESTART,
 )
