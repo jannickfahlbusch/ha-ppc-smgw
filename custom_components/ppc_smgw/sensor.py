@@ -5,8 +5,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.util import slugify
 
-from . import PPC_SMGWLocalDataUpdateCoordinator, PPC_SMGWLocalEntity
 from .const import DOMAIN, SENSOR_TYPES, LastUpdatedSensorDescription
+from .coordinator import PPC_SMGWLocalDataUpdateCoordinator, PPC_SMGWLocalEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,15 +42,13 @@ async def async_setup_entry(
         entity = PPC_SMGWSensor(coordinator, description)
         entities.append(entity)
 
+    _LOGGER.debug(f"Adding entities: {entities}")
+    for entity in entities:
+        _LOGGER.debug(
+            f"Adding entity: {entity.entity_description} - {entity.entity_description.key}"
+        )
+
     async_add_entities(entities)
-
-
-def get_sensor_description(obis_code: str) -> SensorEntityDescription | None:
-    for description in SENSOR_TYPES:
-        if description.key == obis_code:
-            return description
-
-    return None
 
 
 class PPC_SMGWSensor(PPC_SMGWLocalEntity, SensorEntity):
@@ -69,7 +67,9 @@ class PPC_SMGWSensor(PPC_SMGWLocalEntity, SensorEntity):
             self._attr_entity_registry_enabled_default = True
 
         key = self.entity_description.key.lower()
-        self.entity_id = f"sensor.{slugify(self.coordinator._config_entry.title)}_{key}"
+        self.entity_id = (
+            f"sensor.{slugify(self.coordinator._config_entry.entry_id)}_{key}"
+        )
 
         # we use the "key" also as our internal translation-key - and EXTREMELY important we have
         # to set the '_attr_has_entity_name' to trigger the calls to the localization framework!
@@ -118,7 +118,9 @@ class LastUpdatedSensor(PPC_SMGWLocalEntity, SensorEntity):
         super().__init__(coordinator=coordinator, description=description)
 
         key = self.entity_description.key.lower()
-        self.entity_id = f"sensor.{slugify(self.coordinator._config_entry.title)}_{key}"
+        self.entity_id = (
+            f"sensor.{slugify(self.coordinator._config_entry.entry_id)}_{key}"
+        )
 
         # we use the "key" also as our internal translation-key - and EXTREMELY important we have
         # to set the '_attr_has_entity_name' to trigger the calls to the localization framework!
@@ -137,3 +139,11 @@ class LastUpdatedSensor(PPC_SMGWLocalEntity, SensorEntity):
             return None
 
         return readings[0].timestamp
+
+
+def get_sensor_description(obis_code: str) -> SensorEntityDescription | None:
+    for description in SENSOR_TYPES:
+        if description.key == obis_code:
+            return description
+
+    return None

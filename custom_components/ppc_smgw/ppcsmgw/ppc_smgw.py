@@ -56,24 +56,27 @@ class PPCSmgw:
                 raise SessionCookieStillPresentError
 
         try:
-            response = await self.httpx_client.get(self.host, timeout=10, auth=auth)
+            response = await self.httpx_client.get(
+                self.host,
+                timeout=10,
+                auth=self._get_auth(),
+            )
         except Exception as e:
             self.logger.error(f"Error connecting to {self.host}: {e}")
             return []
 
         self._cookies = {"Cookie": response.cookies["session"]}
 
+        soup = BeautifulSoup(response.content, "html.parser")
+        tags = soup.find_all("input")
+        self._token = tags[0].get("value")
+
         self.logger.info("Got cookie response, assuming we are logged in")
 
         return response
 
     async def get_data(self):
-        response = await self._login()
-        auth = self._get_auth()
-
-        soup = BeautifulSoup(response.content, "html.parser")
-        tags = soup.find_all("input")
-        self._token = tags[0].get("value")
+        await self._login()
 
         self.logger.info("Requesting meter readings")
 
@@ -83,7 +86,7 @@ class PPCSmgw:
                 data=self._post_data("meterform"),
                 cookies=self._cookies,
                 timeout=10,
-                auth=auth,
+                auth=self._get_auth(),
             )
         except Exception as e:
             self.logger.error(f"Error getting meter readings: {e}")
@@ -99,7 +102,11 @@ class PPCSmgw:
 
         try:
             response = await self.httpx_client.post(
-                self.host, data=post_data, cookies=self._cookies, timeout=10, auth=auth
+                self.host,
+                data=post_data,
+                cookies=self._cookies,
+                timeout=10,
+                auth=self._get_auth(),
             )
         except Exception as e:
             self.logger.error(f"Error getting meter profile: {e}")
@@ -148,6 +155,8 @@ class PPCSmgw:
                     )
                 )
 
+        await self._logout()
+
         return readings
 
     async def _logout(self):
@@ -172,20 +181,28 @@ class PPCSmgw:
             self.logger.error(f"Error logging out: {e}")
             return []
 
-    def logout(self):
-        """Logout."""
-
-        auth = self._get_auth()
-        self.httpx_client.post(self.host, data="action=logout", timeout=10, auth=auth)
-
-    def selftest(self):
+    async def selftest(self):
         """Call the self-test of the SMWG. This reboots the SMGW."""
 
+        self.logger.info("Running self-test")
+        await self._login()
+
+        self.logger.info("Requesting self-test")
+
         auth = self._get_auth()
-        self.httpx_client.post(
-            self.host, data=self._post_data("selftest"), timeout=10, auth=auth
+        self.logger.debug(f"Auth: {auth}")
+        self.logger.debug(f"Post data: {self._post_data('selftest')}")
+        response = await self.httpx_client.post(
+            self.host,
+            data=self._post_data("selftest"),
+            cookies=self._cookies,
+            timeout=10,
+            auth=self._get_auth(),
         )
 
-    def reboot(self):
+        self.logger.debug(f"Got response: {response}")
+        self.logger.debug(f"Got content: {response.content}")
+
+    async def reboot(self):
         """Reboots the SMGW through a Self-Test."""
-        return self.selftest()
+        return await self.selftest()

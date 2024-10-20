@@ -1,26 +1,25 @@
 import logging
 
 import voluptuous as vol
+
 from homeassistant import config_entries
 from homeassistant.const import (
     CONF_HOST,
     CONF_NAME,
-    CONF_SCAN_INTERVAL,
     CONF_PASSWORD,
+    CONF_SCAN_INTERVAL,
     CONF_USERNAME,
 )
 from homeassistant.core import HomeAssistant, callback
 
 from .const import (
-    DOMAIN,
-    DEFAULT_NAME,
     DEFAULT_HOST,
-    DEFAULT_USERNAME,
+    DEFAULT_NAME,
     DEFAULT_PASSWORD,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_USERNAME,
+    DOMAIN,
 )
-
-from .ppc_smgw import PPC_SMGW
 
 _LOGGER = logging.getLogger(__name__)
 
