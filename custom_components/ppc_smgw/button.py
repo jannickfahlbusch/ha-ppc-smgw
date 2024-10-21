@@ -3,10 +3,9 @@ import logging
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.util import slugify
 
 from .const import DOMAIN, RestartGatewayButtonDescription
-from .coordinator import PPC_SMGWLocalDataUpdateCoordinator
+from .coordinator import PPC_SMGWLocalDataUpdateCoordinator, PPC_SMGWLocalEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,7 +20,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class RestartGatewayButton(ButtonEntity):
+class RestartGatewayButton(PPC_SMGWLocalEntity, ButtonEntity):
     """Button entity to restart the gateway."""
 
     def __init__(
@@ -29,20 +28,24 @@ class RestartGatewayButton(ButtonEntity):
         coordinator: PPC_SMGWLocalDataUpdateCoordinator,
     ) -> None:
         """Initialize the Button."""
+        super().__init__(
+            coordinator=coordinator, description=RestartGatewayButtonDescription
+        )
+
         self.coordinator = coordinator
 
         key = self.entity_description.key.lower()
-        self.entity_id = (
-            f"button.{slugify(self.coordinator._config_entry.entry_id)}_{key}"
+
+        self._attr_unique_id = (
+            f"button.{self.coordinator._config_entry.entry_id}_restart"
         )
-        _LOGGER.debug(f"Entity ID: {self.entity_id}")
+
+        _LOGGER.debug(f"Entity ID: {self._attr_unique_id}")
 
         # we use the "key" also as our internal translation-key - and EXTREMELY important we have
         # to set the '_attr_has_entity_name' to trigger the calls to the localization framework!
         self._attr_translation_key = key
         self._attr_has_entity_name = True
-
-    entity_description = RestartGatewayButtonDescription
 
     async def async_press(self) -> None:
         """Press the Restart Button."""
