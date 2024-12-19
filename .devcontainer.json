@@ -1,0 +1,14 @@
+{
+    "image": "mcr.microsoft.com/devcontainers/python:3.12",
+    "postCreateCommand": "scripts/setup.sh",
+    "forwardPorts": [
+        8123
+    ],
+    "portsAttributes": {
+        "8123": {
+            "label": "Home Assistant",
+            "onAutoForward": "notify"
+        }
+    },
+    "features": {}
+}
