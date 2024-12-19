@@ -134,9 +134,7 @@ class PPCSmgw:
                 if row_timestamp is None:
                     current_timestamp = timestamp
 
-                    self.logger.debug(
-                        f"Timestamp not found, using previous: {current_timestamp}"
-                    )
+                    self.logger.debug(f"Timestamp not found, using previous: {current_timestamp}")
                 else:
                     self.logger.debug(f"Found timestamp: {row_timestamp.string}")
                     current_timestamp = datetime.strptime(
@@ -157,6 +155,9 @@ class PPCSmgw:
 
         await self._logout()
 
+        self.logger.info(f"Found {len(readings)} readings")
+        self.logger.debug(f"Readings:\n{readings}")
+
         return readings
 
     async def _logout(self):
@@ -172,8 +173,8 @@ class PPCSmgw:
                 timeout=10,
                 auth=self._get_auth(),
             )
-            self.logger.debug(f"Got response: {response}")
-            self.logger.debug(f"Got content: {response.content}")
+            self.logger.debug(f"Got response: {response}\nContent: {response.content}")
+
         except Exception as e:
             self._cookies = {}
             self._token = ""
@@ -190,7 +191,6 @@ class PPCSmgw:
         self.logger.info("Requesting self-test")
 
         auth = self._get_auth()
-        self.logger.debug(f"Auth: {auth}")
         self.logger.debug(f"Post data: {self._post_data('selftest')}")
         response = await self.httpx_client.post(
             self.host,
@@ -200,8 +200,7 @@ class PPCSmgw:
             auth=self._get_auth(),
         )
 
-        self.logger.debug(f"Got response: {response}")
-        self.logger.debug(f"Got content: {response.content}")
+        self.logger.debug(f"Got response: {response}\nContent: {response.content}")
 
     async def reboot(self):
         """Reboots the SMGW through a Self-Test."""
