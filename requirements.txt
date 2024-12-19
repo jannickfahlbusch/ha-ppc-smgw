@@ -1,4 +1,4 @@
-homeassistant==2024.12.3
+homeassistant==2024.12.4
 
 httpx~=0.27.2
 bs4~=0.0.2
