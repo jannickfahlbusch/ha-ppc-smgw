@@ -1,149 +1,56 @@
 import logging
 
 from homeassistant.components.sensor import SensorEntity, SensorEntityDescription
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.util import slugify
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, SENSOR_TYPES, LastUpdatedSensorDescription
-from .coordinator import PPC_SMGWLocalDataUpdateCoordinator, PPC_SMGWLocalEntity
+from .const import SENSOR_TYPES
+from .coordinator import PPC_SMGWDataUpdateCoordinator, ConfigEntry
+from .entity import SMGWEntity
+from .ppcsmgw.reading import Information
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities
-):
-    coordinator = hass.data[DOMAIN][config_entry.entry_id]
-    entities = [LastUpdatedSensor(coordinator, LastUpdatedSensorDescription)]
-    available_sensors = None
-    if hasattr(coordinator, "ppc_smgw"):
-        if hasattr(coordinator.ppc_smgw, "_readings"):
-            if len(coordinator.ppc_smgw._readings) > 0:
-                available_sensors = []
-                for reading in coordinator.ppc_smgw._readings:
-                    available_sensors.append(reading.obis)
-                _LOGGER.info(f"available sensors found: {available_sensors}")
-            else:
-                _LOGGER.warning(f"no sensors found @ ppc_smgw")
-
-    if available_sensors is None or len(available_sensors) == 0:
-        _LOGGER.warning(
-            f"Could not detect available sensors (obis-codes) using just 'import total' as default!"
+    hass: HomeAssistant,  # noqa: ARG001 Unused function argument: `hass`
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up the sensor platform."""
+    async_add_entities(
+        OBISSensor(
+            coordinator=entry.runtime_data.coordinator,
+            entity_description=entity_description,
         )
-        available_sensors = ["1-0:1.8.0"]
-
-    for reading in available_sensors:
-        _LOGGER.debug(f"Creating sensor for reading: {reading}")
-
-        description = get_sensor_description(reading)
-        _LOGGER.debug(f"Description: {description}")
-
-        entity = PPC_SMGWSensor(coordinator, description)
-        entities.append(entity)
-
-    _LOGGER.debug(f"Adding entities: {entities}")
-    for entity in entities:
-        _LOGGER.debug(
-            f"Adding entity: {entity.entity_description} - {entity.entity_description.key}"
-        )
-
-    async_add_entities(entities)
+        for entity_description in SENSOR_TYPES
+    )
 
 
-class PPC_SMGWSensor(PPC_SMGWLocalEntity, SensorEntity):
+class OBISSensor(SMGWEntity, SensorEntity):
     def __init__(
         self,
-        coordinator: PPC_SMGWLocalDataUpdateCoordinator,
-        description: SensorEntityDescription,
-    ):
-        """Initialize a singular value sensor."""
-        super().__init__(coordinator=coordinator, description=description)
-        if hasattr(self.entity_description, "entity_registry_enabled_default"):
-            self._attr_entity_registry_enabled_default = (
-                self.entity_description.entity_registry_enabled_default
-            )
-        else:
-            self._attr_entity_registry_enabled_default = True
+        coordinator: PPC_SMGWDataUpdateCoordinator,
+        entity_description: SensorEntityDescription,
+    ) -> None:
+        """Initialize the sensor class."""
+        super().__init__(coordinator, entity_description)
+        self.entity_description = entity_description
 
-        key = self.entity_description.key.lower()
-        self.entity_id = (
-            f"sensor.{slugify(self.coordinator._config_entry.entry_id)}_{key}"
-        )
-
-        # we use the "key" also as our internal translation-key - and EXTREMELY important we have
-        # to set the '_attr_has_entity_name' to trigger the calls to the localization framework!
-        self._attr_translation_key = key
-        self._attr_has_entity_name = True
-
-        if (
-            hasattr(description, "suggested_display_precision")
-            and description.suggested_display_precision is not None
-        ):
-            self._attr_suggested_display_precision = (
-                description.suggested_display_precision
-            )
-        else:
-            self._attr_suggested_display_precision = 2
+        self._attr_unique_id = f"sensor.{self.get_entity_id_template()}"
+        self.entity_id = self._attr_unique_id
 
     @property
-    def state(self):
-        """Return the current state."""
-        reading = self.coordinator.ppc_smgw.get_reading_for_obis_code(
-            self.entity_description.key
-        )
-        if reading is None:
+    def native_value(self) -> str | None:
+        """Return the native value of the sensor."""
+        _LOGGER.debug(f"Data: {self.coordinator.data}")
+
+        data: Information = self.coordinator.data
+
+        if self.entity_description.key not in data.readings:
+            _LOGGER.debug(f"Found no value for {self.entity_description.key}")
             return None
 
-        value = reading.value
-        if type(value) != type(False):
-            try:
-                rounded_value = round(
-                    float(value), self._attr_suggested_display_precision
-                )
-                return rounded_value
-            except (ValueError, TypeError):
-                return value
-        else:
-            return value
+        reading = data.readings[self.entity_description.key]
 
-
-class LastUpdatedSensor(PPC_SMGWLocalEntity, SensorEntity):
-    def __init__(
-        self,
-        coordinator: PPC_SMGWLocalDataUpdateCoordinator,
-        description: SensorEntityDescription,
-    ):
-        """Initialize a singular value sensor."""
-        super().__init__(coordinator=coordinator, description=description)
-
-        key = self.entity_description.key.lower()
-        self.entity_id = (
-            f"sensor.{slugify(self.coordinator._config_entry.entry_id)}_{key}"
-        )
-
-        # we use the "key" also as our internal translation-key - and EXTREMELY important we have
-        # to set the '_attr_has_entity_name' to trigger the calls to the localization framework!
-        self._attr_translation_key = key
-        self._attr_has_entity_name = True
-
-    @property
-    def state(self):
-        """Return the current state."""
-
-        _LOGGER.info("Requesting last update timestamp")
-
-        readings = self.coordinator.ppc_smgw.get_readings()
-
-        if len(readings) == 0:
-            return None
-
-        return readings[0].timestamp
-
-
-def get_sensor_description(obis_code: str) -> SensorEntityDescription | None:
-    for description in SENSOR_TYPES:
-        if description.key == obis_code:
-            return description
-
-    return None
+        return reading.value

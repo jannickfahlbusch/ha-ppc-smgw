@@ -1,53 +1,47 @@
 import logging
 
-from homeassistant.components.button import ButtonEntity
+from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, RestartGatewayButtonDescription
-from .coordinator import PPC_SMGWLocalDataUpdateCoordinator, PPC_SMGWLocalEntity
+from .const import RestartGatewayButtonDescription
+from .coordinator import PPC_SMGWDataUpdateCoordinator
+from .entity import SMGWEntity
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ):
-    coordinator = hass.data[DOMAIN][config_entry.entry_id]
-    entities = [RestartGatewayButton(coordinator)]
+    restart_button = RestartGatewayButton(
+        config_entry.runtime_data.coordinator, RestartGatewayButtonDescription
+    )
 
-    _LOGGER.debug(f"Adding button entities: {entities}")
-    async_add_entities(entities)
+    _LOGGER.debug(f"Adding button entities: {restart_button}")
+    async_add_entities([restart_button])
 
 
-class RestartGatewayButton(PPC_SMGWLocalEntity, ButtonEntity):
+class RestartGatewayButton(SMGWEntity, ButtonEntity):
     """Button entity to restart the gateway."""
 
     def __init__(
         self,
-        coordinator: PPC_SMGWLocalDataUpdateCoordinator,
+        coordinator: PPC_SMGWDataUpdateCoordinator,
+        entity_description: ButtonEntityDescription,
     ) -> None:
         """Initialize the Button."""
-        super().__init__(
-            coordinator=coordinator, description=RestartGatewayButtonDescription
-        )
-
+        super().__init__(coordinator, entity_description)
+        self.entity_description = entity_description
         self.coordinator = coordinator
 
-        key = self.entity_description.key.lower()
-
-        self._attr_unique_id = (
-            f"button.{self.coordinator._config_entry.entry_id}_restart"
-        )
-
-        _LOGGER.debug(f"Entity ID: {self._attr_unique_id}")
-
-        # we use the "key" also as our internal translation-key - and EXTREMELY important we have
-        # to set the '_attr_has_entity_name' to trigger the calls to the localization framework!
-        self._attr_translation_key = key
-        self._attr_has_entity_name = True
+        self._attr_unique_id = f"sensor.{self.get_entity_id_template()}"
+        self.entity_id = self._attr_unique_id
 
     async def async_press(self) -> None:
         """Press the Restart Button."""
         _LOGGER.debug("Restart of Gateway requested")
-        await self.coordinator.ppc_smgw.ppc_smgw_client.reboot()
+        await self.coordinator.config_entry.runtime_data.client.ppc_smgw_client.reboot()

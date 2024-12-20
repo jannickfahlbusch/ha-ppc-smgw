@@ -11,7 +11,8 @@
             "host": "URL to the PPC SMGW",
             "username": "Username",
             "password": "Password",
-            "scan_interval": "Polling Interval in minutes"
+            "scan_interval": "Polling Interval in minutes",
+            "debug": "Development mode - DO NOT USE (Uses fake data)"
           }
         }
       }
@@ -25,7 +26,8 @@
             "host": "URL to the PPC SMGW",
             "username": "Username",
             "password": "Password",
-            "scan_interval": "Polling Interval in minutes"
+            "scan_interval": "Polling Interval in minutes",
+            "debug": "Development mode - DO NOT USE (Uses fake data)"
           }
         }
       }
