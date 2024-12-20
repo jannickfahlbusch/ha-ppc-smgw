@@ -2,11 +2,11 @@
 
 from datetime import datetime
 
-from bs4 import BeautifulSoup
 import httpx
+from bs4 import BeautifulSoup
 
 from .errors import SessionCookieStillPresentError
-from .reading import Reading
+from .reading import Reading, Information, OBISCode
 
 
 class PPCSmgw:
@@ -28,6 +28,8 @@ class PPCSmgw:
         self._cookies = {}
         self._token = ""
 
+        self.firmware_version = None
+
     def _get_auth(self):
         auth = httpx.DigestAuth(username=self.username, password=self.password)
         self.httpx_client.auth = auth
@@ -43,7 +45,7 @@ class PPCSmgw:
         auth = httpx.DigestAuth(username=self.username, password=self.password)
         self.httpx_client.auth = auth
 
-        # ToDo: Find a way to remove the cookie here!
+        # TODO: Find a way to remove the cookie here!
         # See https://github.com/encode/httpx/pull/3065
         if "session" in self.httpx_client.cookies:
             self.logger.debug("Session cookie still present, trying to delete it")
@@ -75,7 +77,10 @@ class PPCSmgw:
 
         return response
 
-    async def get_data(self):
+    def _set_firwmware_version(self, soup) -> None:
+        self.firmware_version = soup.find(id="div_fwversion").get_text().strip()
+
+    async def get_data(self) -> Information:
         await self._login()
 
         self.logger.info("Requesting meter readings")
@@ -95,6 +100,9 @@ class PPCSmgw:
         self.logger.info("Got meter readings, parsing...")
 
         soup = BeautifulSoup(response.content, "html.parser")
+
+        self._set_firwmware_version(soup)
+
         sel = soup.find(id="meterform_select_meter")
         meter_val = sel.findChild()
         meter_id = meter_val.attrs.get("value")
@@ -120,7 +128,7 @@ class PPCSmgw:
         self.logger.info(f"Found {len(rows)} rows")
 
         timestamp = ""
-        readings: list[Reading] = []
+        readings: dict[OBISCode, Reading] = {}
 
         for row in rows:
             obis_code = row.find(id="table_metervalues_col_obis")
@@ -134,7 +142,9 @@ class PPCSmgw:
                 if row_timestamp is None:
                     current_timestamp = timestamp
 
-                    self.logger.debug(f"Timestamp not found, using previous: {current_timestamp}")
+                    self.logger.debug(
+                        f"Timestamp not found, using previous: {current_timestamp}"
+                    )
                 else:
                     self.logger.debug(f"Found timestamp: {row_timestamp.string}")
                     current_timestamp = datetime.strptime(
@@ -142,15 +152,15 @@ class PPCSmgw:
                     )
                     timestamp = current_timestamp
 
-                readings.append(
-                    Reading(
-                        value=row.find(id="table_metervalues_col_wert").string,
-                        unit=row.find(id="table_metervalues_col_einheit").string,
-                        timestamp=current_timestamp,
-                        isvalid=row.find(id="table_metervalues_col_istvalide").string,
-                        name=row.find(id="table_metervalues_col_name").string,
-                        obis=row.find(id="table_metervalues_col_obis").string,
-                    )
+                obis_code = row.find(id="table_metervalues_col_obis").string
+
+                readings[obis_code] = Reading(
+                    value=row.find(id="table_metervalues_col_wert").string,
+                    unit=row.find(id="table_metervalues_col_einheit").string,
+                    timestamp=current_timestamp,
+                    isvalid=row.find(id="table_metervalues_col_istvalide").string,
+                    name=row.find(id="table_metervalues_col_name").string,
+                    obis=obis_code,
                 )
 
         await self._logout()
@@ -158,7 +168,13 @@ class PPCSmgw:
         self.logger.info(f"Found {len(readings)} readings")
         self.logger.debug(f"Readings:\n{readings}")
 
-        return readings
+        information: Information = Information(
+            readings=readings,
+            firmware_version=self.firmware_version,
+            last_update=timestamp,
+        )
+
+        return information
 
     async def _logout(self):
         # The PPC SMGW only allows a single session to be active at a time
@@ -184,13 +200,11 @@ class PPCSmgw:
 
     async def selftest(self):
         """Call the self-test of the SMWG. This reboots the SMGW."""
-
         self.logger.info("Running self-test")
         await self._login()
 
         self.logger.info("Requesting self-test")
 
-        auth = self._get_auth()
         self.logger.debug(f"Post data: {self._post_data('selftest')}")
         response = await self.httpx_client.post(
             self.host,

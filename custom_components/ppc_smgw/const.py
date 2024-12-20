@@ -13,6 +13,7 @@ DEFAULT_HOST = "https://192.168.1.200/cgi-bin/hanservice.cgi"
 DEFAULT_USERNAME = ""
 DEFAULT_PASSWORD = ""
 DEFAULT_SCAN_INTERVAL = 5
+DEFAULT_DEBUG = False
 
 SENSOR_TYPES = [
     SensorEntityDescription(

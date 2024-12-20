@@ -1,7 +1,6 @@
 import logging
 
 import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.const import (
     CONF_HOST,
@@ -9,6 +8,7 @@ from homeassistant.const import (
     CONF_PASSWORD,
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
+    CONF_DEBUG,
 )
 from homeassistant.core import HomeAssistant, callback
 
@@ -19,6 +19,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_USERNAME,
     DOMAIN,
+    DEFAULT_DEBUG,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -51,7 +52,7 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def _test_connection(self, host, username, password):
         self._errors = {}
-        # ToDo: Implement connection check
+        # TODO: Implement connection check
         return True
 
     async def async_step_user(self, user_input=None):
@@ -62,26 +63,27 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             username = user_input.get(CONF_USERNAME, "")
             password = user_input.get(CONF_PASSWORD, "")
             scan = user_input.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+            debug = user_input.get(CONF_DEBUG, DEFAULT_DEBUG)
 
             if _host_in_configuration_exists(host, self.hass):
                 self._errors[CONF_HOST] = "already_configured"
+            elif await self._test_connection(host, username, password):
+                a_data = {
+                    CONF_NAME: name,
+                    CONF_HOST: host,
+                    CONF_USERNAME: username,
+                    CONF_PASSWORD: password,
+                    CONF_SCAN_INTERVAL: scan,
+                    CONF_DEBUG: debug,
+                }
+
+                return self.async_create_entry(title=name, data=a_data)
+
             else:
-                if await self._test_connection(host, username, password):
-                    a_data = {
-                        CONF_NAME: name,
-                        CONF_HOST: host,
-                        CONF_USERNAME: username,
-                        CONF_PASSWORD: password,
-                        CONF_SCAN_INTERVAL: scan,
-                    }
-
-                    return self.async_create_entry(title=name, data=a_data)
-
-                else:
-                    _LOGGER.error(
-                        "Could not connect to SMGW at %s. Check connection manually",
-                        host,
-                    )
+                _LOGGER.error(
+                    "Could not connect to SMGW at %s. Check connection manually",
+                    host,
+                )
         else:
             user_input = {}
             user_input[CONF_NAME] = DEFAULT_NAME
@@ -89,6 +91,7 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             user_input[CONF_USERNAME] = DEFAULT_USERNAME
             user_input[CONF_PASSWORD] = DEFAULT_PASSWORD
             user_input[CONF_SCAN_INTERVAL] = DEFAULT_SCAN_INTERVAL
+            user_input[CONF_DEBUG] = DEFAULT_DEBUG
 
         return self.async_show_form(
             step_id="user",
@@ -114,6 +117,10 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
                         ),
                     ): int,
+                    vol.Optional(
+                        CONF_DEBUG,
+                        default=user_input.get(CONF_DEBUG, DEFAULT_SCAN_INTERVAL),
+                    ): bool,
                 }
             ),
             last_step=True,
@@ -193,6 +200,13 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
                             self.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
                         ),
                     ): int,
+                    vol.Optional(
+                        CONF_DEBUG,
+                        default=self.options.get(
+                            CONF_DEBUG,
+                            self.data.get(CONF_DEBUG, DEFAULT_DEBUG),
+                        ),
+                    ): bool,
                 }
             ),
         )
