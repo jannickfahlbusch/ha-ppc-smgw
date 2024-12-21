@@ -44,7 +44,7 @@ async def async_setup_entry(
         )
     )
 
-    development_mode  = False
+    development_mode = False
     if CONF_USERNAME in entry.data:
         development_mode = True
 
