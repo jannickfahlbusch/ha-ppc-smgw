@@ -44,6 +44,10 @@ async def async_setup_entry(
         )
     )
 
+    development_mode  = False
+    if CONF_USERNAME in entry.data:
+        development_mode = True
+
     entry.runtime_data = Data(
         client=PPC_SMGW(
             host=entry.data[CONF_HOST],
@@ -51,7 +55,7 @@ async def async_setup_entry(
             password=entry.data[CONF_PASSWORD],
             websession=get_async_client(hass, verify_ssl=False),
             logger=_LOGGER,
-            debug=entry.data[CONF_DEBUG],
+            debug=development_mode,
         ),
         integration=async_get_loaded_integration(hass, entry.domain),
         coordinator=coordinator,
