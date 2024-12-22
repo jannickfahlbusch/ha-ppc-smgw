@@ -45,7 +45,7 @@ async def async_setup_entry(
     )
 
     development_mode = False
-    if CONF_USERNAME in entry.data:
+    if CONF_DEBUG in entry.data:
         development_mode = True
 
     entry.runtime_data = Data(
