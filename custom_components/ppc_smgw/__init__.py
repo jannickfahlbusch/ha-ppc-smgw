@@ -45,8 +45,8 @@ async def async_setup_entry(
     )
 
     development_mode = False
-    if CONF_USERNAME in entry.data:
-        development_mode = True
+    if CONF_DEBUG in entry.data:
+        development_mode = entry.data[CONF_DEBUG]
 
     entry.runtime_data = Data(
         client=PPC_SMGW(
