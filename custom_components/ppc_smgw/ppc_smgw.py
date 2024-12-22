@@ -1,4 +1,5 @@
 import logging
+import asyncio
 
 import httpx
 import urllib3
@@ -40,12 +41,15 @@ class PPC_SMGW:
         # TODO: Implement a basic connection check?
         return True
 
-    # TODO: This should be split into multiple smaller functions
     async def get_data(self) -> Information:
         self.logger.info("Getting data")
 
         if self.debug:
             self.logger.debug("Debugging enabled, returning fake data")
+
+            # It takes around 15 seconds for the GW to respond to all calls
+            # We should emulate this here to avoid timing issues
+            await asyncio.sleep(15)
             self.data = FakeInformation
         else:
             self.data = await self.ppc_smgw_client.get_data()
