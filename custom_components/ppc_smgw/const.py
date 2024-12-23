@@ -4,7 +4,10 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import UnitOfEnergy
+from homeassistant.const import (
+    UnitOfEnergy,
+    UnitOfPower,
+)
 
 DOMAIN = "ppc_smgw"
 MANUFACTURER = "Power Plus Communications AG"
@@ -15,10 +18,11 @@ DEFAULT_PASSWORD = ""
 DEFAULT_SCAN_INTERVAL = 5
 DEFAULT_DEBUG = False
 
+# https://developers.home-assistant.io/docs/core/entity/sensor/
 SENSOR_TYPES = [
     SensorEntityDescription(
         key="1-0:1.8.0",
-        name="Import total",
+        name="Import total (kWh)",
         suggested_display_precision=5,
         entity_registry_enabled_default=True,
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
@@ -34,6 +38,24 @@ SENSOR_TYPES = [
         icon="mdi:home-export-outline",
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
+    ),
+    SensorEntityDescription(
+        key="1-1:1.7.0",
+        name="Current power import (kW)",
+        suggested_display_precision=5,
+        native_unit_of_measurement=UnitOfPower.KILO_WATT,
+        icon="mdi:power-from-grid",
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    SensorEntityDescription(
+        key="1-1:2.7.0",  # apparently on some models this value is also/instead available as `1-0:10.7.0`
+        name="Current power export (kW)",
+        suggested_display_precision=5,
+        native_unit_of_measurement=UnitOfPower.KILO_WATT,
+        icon="mdi:power-to-grid",
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
     ),
 ]
 
