@@ -42,6 +42,7 @@ class SMGWEntity(CoordinatorEntity[PPC_SMGWDataUpdateCoordinator]):
             name=DEFAULT_NAME,
             manufacturer=MANUFACTURER,
             model="SMGW",
+            sw_version=self.get_firmware_version(),
         )
 
         self._attr_translation_key = self.entity_description.key.lower()
@@ -51,3 +52,14 @@ class SMGWEntity(CoordinatorEntity[PPC_SMGWDataUpdateCoordinator]):
         return slugify(
             f"{self.coordinator.config_entry.entry_id}_{self.entity_description.key}"
         )
+
+    def get_firmware_version(self) -> str:
+        firmware_version = "unknown"
+        try:
+            firmware_version = self._coordinator.data.firmware_version
+        except AttributeError:
+            _LOGGER.debug(
+                f"Firmware version not available. Data available: {self._coordinator.data}"
+            )
+
+        return firmware_version
