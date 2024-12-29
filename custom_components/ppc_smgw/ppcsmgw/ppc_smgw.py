@@ -47,10 +47,10 @@ class PPCSmgw:
 
         # TODO: Find a way to remove the cookie here!
         # See https://github.com/encode/httpx/pull/3065
-        if "session" in self.httpx_client.cookies:
+        if self.httpx_client.cookies.get(name="session") is not None:
             self.logger.debug("Session cookie still present, trying to delete it")
 
-            self.httpx_client.cookies.delete("session")
+            self.httpx_client.cookies.delete(name="session")
             self.logger.debug("Deleted session cookie")
 
             if "session" in self.httpx_client.cookies:
