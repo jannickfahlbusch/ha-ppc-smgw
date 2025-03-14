@@ -15,6 +15,8 @@ DEFAULT_PASSWORD = ""
 DEFAULT_SCAN_INTERVAL = 5
 DEFAULT_DEBUG = False
 
+CONF_METER_TYPE = "meter_type"
+
 SENSOR_TYPES = [
     SensorEntityDescription(
         key="1-0:1.8.0",

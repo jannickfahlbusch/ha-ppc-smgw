@@ -5,6 +5,12 @@
       },
       "step": {
         "user": {
+          "description": "Please select the vendor of your Smart Meter Gateway",
+          "data": {
+            "meter_type": "Vendor"
+          }
+        },
+        "connection_info": {
           "description": "Please specify the local connection information for your PPC Smart Meter Gateway.\nYou should be able to receive the credentials from your electricity distributor\n\nMake sure to configure a scan interval higher than 15 minute as the GW could block your IP if you poll too often.",
           "data": {
             "name": "Display name",

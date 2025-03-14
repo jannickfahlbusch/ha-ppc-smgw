@@ -14,9 +14,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.httpx_client import get_async_client
 from homeassistant.loader import async_get_loaded_integration
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN
+from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, CONF_METER_TYPE
 from .coordinator import SMGwDataUpdateCoordinator, ConfigEntry, Data
-from .ppc_smgw import PPC_SMGW
+from custom_components.ppc_smgw.gateways.gateway import Gateway
+from custom_components.ppc_smgw.gateways.theben.theben_connexa import ThebenConnexa
+from custom_components.ppc_smgw.gateways.vendors import Vendor
+from custom_components.ppc_smgw.gateways.ppc.ppc_smgw import PPC_SMGW
 
 _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
@@ -48,15 +51,35 @@ async def async_setup_entry(
     if CONF_DEBUG in entry.data:
         development_mode = entry.data[CONF_DEBUG]
 
+    client: Gateway
+
+    _LOGGER.debug(f"Vendor is: {entry.data[CONF_METER_TYPE]} ({type(entry.data[CONF_METER_TYPE])})")
+    match Vendor(entry.data[CONF_METER_TYPE]):
+        case Vendor.PPC:
+            _LOGGER.debug(f"Initializing PPC SMGW client")
+            client = PPC_SMGW(
+                host=entry.data[CONF_HOST],
+                username=entry.data[CONF_USERNAME],
+                password=entry.data[CONF_PASSWORD],
+                websession=get_async_client(hass, verify_ssl=False),
+                logger=_LOGGER,
+                debug=development_mode,
+            )
+        case Vendor.Theben:
+            _LOGGER.debug(f"Initializing Theben client")
+            client = ThebenConnexa(
+                host=entry.data[CONF_HOST],
+                username=entry.data[CONF_USERNAME],
+                password=entry.data[CONF_PASSWORD],
+                websession=get_async_client(hass, verify_ssl=False),
+                logger=_LOGGER,
+                debug=development_mode,
+            )
+        case _:
+            _LOGGER.error(f"Unexpected error, no meter type matching for entry {entry}. Meter type: {entry.data[CONF_METER_TYPE]}")
+
     entry.runtime_data = Data(
-        client=PPC_SMGW(
-            host=entry.data[CONF_HOST],
-            username=entry.data[CONF_USERNAME],
-            password=entry.data[CONF_PASSWORD],
-            websession=get_async_client(hass, verify_ssl=False),
-            logger=_LOGGER,
-            debug=development_mode,
-        ),
+        client=client,
         integration=async_get_loaded_integration(hass, entry.domain),
         coordinator=coordinator,
     )
