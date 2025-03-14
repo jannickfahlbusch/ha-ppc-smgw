@@ -1,6 +1,6 @@
 """PPC SMGW API."""
 
-from datetime import datetime
+from datetime import datetime, tzinfo
 
 import httpx
 from bs4 import BeautifulSoup
@@ -128,6 +128,8 @@ class PPCSmgw:
         self.logger.info(f"Found {len(rows)} rows")
 
         timestamp = ""
+        local_timezone: tzinfo = datetime.now().astimezone().tzinfo
+
         readings: dict[OBISCode, Reading] = {}
 
         for row in rows:
@@ -149,7 +151,7 @@ class PPCSmgw:
                     self.logger.debug(f"Found timestamp: {row_timestamp.string}")
                     current_timestamp = datetime.strptime(
                         row_timestamp.string, "%Y-%m-%d %H:%M:%S"
-                    )
+                    ).replace(tzinfo=local_timezone)
                     timestamp = current_timestamp
 
                 obis_code = row.find(id="table_metervalues_col_obis").string
