@@ -53,7 +53,9 @@ async def async_setup_entry(
 
     client: Gateway
 
-    _LOGGER.debug(f"Vendor is: {entry.data[CONF_METER_TYPE]} ({type(entry.data[CONF_METER_TYPE])})")
+    _LOGGER.debug(
+        f"Vendor is: {entry.data[CONF_METER_TYPE]} ({type(entry.data[CONF_METER_TYPE])})"
+    )
     match Vendor(entry.data[CONF_METER_TYPE]):
         case Vendor.PPC:
             _LOGGER.debug(f"Initializing PPC SMGW client")
@@ -76,7 +78,9 @@ async def async_setup_entry(
                 debug=development_mode,
             )
         case _:
-            _LOGGER.error(f"Unexpected error, no meter type matching for entry {entry}. Meter type: {entry.data[CONF_METER_TYPE]}")
+            _LOGGER.error(
+                f"Unexpected error, no meter type matching for entry {entry}. Meter type: {entry.data[CONF_METER_TYPE]}"
+            )
 
     entry.runtime_data = Data(
         client=client,
