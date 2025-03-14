@@ -17,9 +17,7 @@ from homeassistant.core import HomeAssistant, callback
 from .const import (
     DEFAULT_HOST,
     DEFAULT_NAME,
-    DEFAULT_PASSWORD,
     DEFAULT_SCAN_INTERVAL,
-    DEFAULT_USERNAME,
     DOMAIN,
     DEFAULT_DEBUG,
     CONF_METER_TYPE,
