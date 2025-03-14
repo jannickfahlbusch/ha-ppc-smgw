@@ -1,7 +1,9 @@
 import logging
+from typing import Any, Optional
 
 import voluptuous as vol
 from homeassistant import config_entries
+from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.const import (
     CONF_HOST,
     CONF_NAME,
@@ -20,9 +22,31 @@ from .const import (
     DEFAULT_USERNAME,
     DOMAIN,
     DEFAULT_DEBUG,
+    CONF_METER_TYPE,
 )
+from .gateways.vendors import Vendor
 
 _LOGGER = logging.getLogger(__name__)
+
+SCHEMA_VENDOR = vol.Schema(
+    {
+        vol.Required(CONF_METER_TYPE): vol.In(Vendor.__members__),
+    }
+)
+
+SCHEMA_CONNECTION_INFO = vol.Schema(
+    {
+        vol.Required(CONF_NAME, default=DEFAULT_NAME): str,
+        vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
+        vol.Required(CONF_USERNAME): str,
+        vol.Required(CONF_PASSWORD): str,
+        vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
+        vol.Optional(
+            CONF_DEBUG,
+            default=False,
+        ): bool,
+    }
+)
 
 
 @staticmethod
@@ -47,82 +71,79 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
-    def __init__(self):
-        self._errors = {}
+    data: Optional[dict[str, Any]]
+    _errors: dict[str, str] = {}
 
     async def _test_connection(self, host, username, password):
         self._errors = {}
         # TODO: Implement connection check
         return True
 
-    async def async_step_user(self, user_input=None):
-        self._errors = {}
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
         if user_input is not None:
-            name = user_input.get(CONF_NAME, DEFAULT_NAME)
-            host = user_input.get(CONF_HOST, DEFAULT_HOST)
-            username = user_input.get(CONF_USERNAME, "")
-            password = user_input.get(CONF_PASSWORD, "")
-            scan = user_input.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-            debug = user_input.get(CONF_DEBUG, DEFAULT_DEBUG)
+            if not self._errors:
+                self.data = user_input
+                self.data[CONF_METER_TYPE]: Vendor = Vendor(
+                    user_input.get(CONF_METER_TYPE)
+                )
 
-            if _host_in_configuration_exists(host, self.hass):
+                return await self.async_step_connection_info(user_input)
+
+        return self.async_show_form(
+            step_id="user", data_schema=SCHEMA_VENDOR, errors=self._errors
+        )
+
+    async def async_step_connection_details(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        pass
+
+    async def async_step_connection_info(
+        self, user_input: dict[str, Any] | None = None
+    ):
+        _LOGGER.debug(f"Connection Info called with {user_input}")
+        if all(
+            k in user_input
+            for k in (
+                CONF_NAME,
+                CONF_HOST,
+                CONF_USERNAME,
+                CONF_PASSWORD,
+                CONF_SCAN_INTERVAL,
+                CONF_DEBUG,
+            )
+        ):
+            self.data[CONF_NAME] = user_input.get(CONF_NAME, DEFAULT_NAME)
+            self.data[CONF_HOST] = user_input.get(CONF_HOST, DEFAULT_HOST)
+            self.data[CONF_USERNAME] = user_input.get(CONF_USERNAME, "")
+            self.data[CONF_PASSWORD] = user_input.get(CONF_PASSWORD, "")
+            self.data[CONF_SCAN_INTERVAL] = user_input.get(
+                CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
+            )
+            self.data[CONF_DEBUG] = user_input.get(CONF_DEBUG, DEFAULT_DEBUG)
+
+            if _host_in_configuration_exists(self.data[CONF_HOST], self.hass):
                 self._errors[CONF_HOST] = "already_configured"
-            elif await self._test_connection(host, username, password):
-                a_data = {
-                    CONF_NAME: name,
-                    CONF_HOST: host,
-                    CONF_USERNAME: username,
-                    CONF_PASSWORD: password,
-                    CONF_SCAN_INTERVAL: scan,
-                    CONF_DEBUG: debug,
-                }
+            elif await self._test_connection(
+                self.data[CONF_HOST], self.data[CONF_USERNAME], self.data[CONF_PASSWORD]
+            ):
+                _LOGGER.debug(f"user_input: {user_input}")
 
-                return self.async_create_entry(title=name, data=a_data)
+                return self.async_create_entry(
+                    title=self.data[CONF_NAME], data=self.data
+                )
 
             else:
                 _LOGGER.error(
                     "Could not connect to SMGW at %s. Check connection manually",
-                    host,
+                    self.data[CONF_HOST],
                 )
-        else:
-            user_input = {}
-            user_input[CONF_NAME] = DEFAULT_NAME
-            user_input[CONF_HOST] = DEFAULT_HOST
-            user_input[CONF_USERNAME] = DEFAULT_USERNAME
-            user_input[CONF_PASSWORD] = DEFAULT_PASSWORD
-            user_input[CONF_SCAN_INTERVAL] = DEFAULT_SCAN_INTERVAL
-            user_input[CONF_DEBUG] = DEFAULT_DEBUG
 
         return self.async_show_form(
-            step_id="user",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        CONF_NAME, default=user_input.get(CONF_NAME, DEFAULT_NAME)
-                    ): str,
-                    vol.Required(
-                        CONF_HOST, default=user_input.get(CONF_HOST, DEFAULT_HOST)
-                    ): str,
-                    vol.Required(
-                        CONF_USERNAME,
-                        default=user_input.get(CONF_USERNAME, DEFAULT_USERNAME),
-                    ): str,
-                    vol.Required(
-                        CONF_PASSWORD,
-                        default=user_input.get(CONF_PASSWORD, DEFAULT_PASSWORD),
-                    ): str,
-                    vol.Required(
-                        CONF_SCAN_INTERVAL,
-                        default=user_input.get(
-                            CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
-                        ),
-                    ): int,
-                    vol.Optional(
-                        CONF_DEBUG,
-                        default=user_input.get(CONF_DEBUG, DEFAULT_SCAN_INTERVAL),
-                    ): bool,
-                }
-            ),
+            step_id="connection_info",
+            data_schema=SCHEMA_CONNECTION_INFO,
             last_step=True,
             errors=self._errors,
         )
@@ -140,6 +161,7 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
         if len(dict(config_entry.options)) == 0:
             self.options = {}
         else:
+            _LOGGER.debug(f"Data: {self.data}")
             self.options = dict(config_entry.options)
 
     async def async_step_init(self, user_input=None):  # pylint: disable=unused-argument
@@ -163,53 +185,7 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
                 # host did not change...
                 return self._update_options()
 
-        return self.async_show_form(
-            step_id="user",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        CONF_NAME,
-                        default=self.options.get(
-                            CONF_NAME, self.data.get(CONF_NAME, DEFAULT_NAME)
-                        ),
-                    ): str,
-                    vol.Required(
-                        CONF_HOST,
-                        default=self.options.get(
-                            CONF_HOST, self.data.get(CONF_HOST, DEFAULT_HOST)
-                        ),
-                    ): str,
-                    vol.Required(
-                        CONF_USERNAME,
-                        default=self.options.get(
-                            CONF_USERNAME,
-                            self.data.get(CONF_USERNAME, DEFAULT_USERNAME),
-                        ),
-                    ): str,
-                    vol.Required(
-                        CONF_PASSWORD,
-                        default=self.options.get(
-                            CONF_PASSWORD,
-                            self.data.get(CONF_PASSWORD, DEFAULT_PASSWORD),
-                        ),
-                    ): str,
-                    vol.Required(
-                        CONF_SCAN_INTERVAL,
-                        default=self.options.get(
-                            CONF_SCAN_INTERVAL,
-                            self.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
-                        ),
-                    ): int,
-                    vol.Optional(
-                        CONF_DEBUG,
-                        default=self.options.get(
-                            CONF_DEBUG,
-                            self.data.get(CONF_DEBUG, DEFAULT_DEBUG),
-                        ),
-                    ): bool,
-                }
-            ),
-        )
+        return self.async_show_form(step_id="user", data_schema=SCHEMA_CONNECTION_INFO)
 
     def _update_options(self):
         """Update config entry options."""
