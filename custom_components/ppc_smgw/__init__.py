@@ -15,7 +15,7 @@ from homeassistant.helpers.httpx_client import get_async_client
 from homeassistant.loader import async_get_loaded_integration
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN
-from .coordinator import PPC_SMGWDataUpdateCoordinator, ConfigEntry, Data
+from .coordinator import SMGwDataUpdateCoordinator, ConfigEntry, Data
 from .ppc_smgw import PPC_SMGW
 
 _LOGGER = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ async def async_setup_entry(
     entry: ConfigEntry,
 ) -> bool:
     """Set up this integration using UI."""
-    coordinator = PPC_SMGWDataUpdateCoordinator(
+    coordinator = SMGwDataUpdateCoordinator(
         hass=hass,
     )
 

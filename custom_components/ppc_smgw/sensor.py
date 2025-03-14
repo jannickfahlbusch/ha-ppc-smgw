@@ -5,9 +5,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import SENSOR_TYPES, LastUpdatedSensorDescription
-from .coordinator import PPC_SMGWDataUpdateCoordinator, ConfigEntry
+from .coordinator import SMGwDataUpdateCoordinator, ConfigEntry
 from .entity import SMGWEntity
-from .ppcsmgw.reading import Information
+from custom_components.ppc_smgw.gateways.reading import Information
 
 _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = 0
@@ -41,7 +41,7 @@ async def async_setup_entry(
 class OBISSensor(SMGWEntity, SensorEntity):
     def __init__(
         self,
-        coordinator: PPC_SMGWDataUpdateCoordinator,
+        coordinator: SMGwDataUpdateCoordinator,
         entity_description: SensorEntityDescription,
     ) -> None:
         """Initialize the sensor class."""
@@ -70,7 +70,7 @@ class OBISSensor(SMGWEntity, SensorEntity):
 class LastUpdatedSensor(SMGWEntity, SensorEntity):
     def __init__(
         self,
-        coordinator: PPC_SMGWDataUpdateCoordinator,
+        coordinator: SMGwDataUpdateCoordinator,
         entity_description: SensorEntityDescription,
     ) -> None:
         """Initialize the sensor class."""

@@ -5,21 +5,21 @@ from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import MANUFACTURER, DEFAULT_NAME
-from .coordinator import PPC_SMGWDataUpdateCoordinator
+from .coordinator import SMGwDataUpdateCoordinator
 from homeassistant.util import slugify
 
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class SMGWEntity(CoordinatorEntity[PPC_SMGWDataUpdateCoordinator]):
+class SMGWEntity(CoordinatorEntity[SMGwDataUpdateCoordinator]):
     """Base class for all entities originating from PPC SMGW."""
 
     entity_description: EntityDescription
 
     def __init__(
         self,
-        coordinator: PPC_SMGWDataUpdateCoordinator,
+        coordinator: SMGwDataUpdateCoordinator,
         entity_description: EntityDescription,
     ) -> None:
         """Initialize."""
