@@ -26,7 +26,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @staticmethod
-def ppc_smgw_entries(hass: HomeAssistant):
+def configured_gateways(hass: HomeAssistant):
     conf_hosts = []
     for entry in hass.config_entries.async_entries(DOMAIN):
         if hasattr(entry, "options") and CONF_HOST in entry.options:
@@ -38,7 +38,7 @@ def ppc_smgw_entries(hass: HomeAssistant):
 
 @staticmethod
 def _host_in_configuration_exists(host: str, hass: HomeAssistant) -> bool:
-    if host in ppc_smgw_entries(hass):
+    if host in configured_gateways(hass):
         return True
     return False
 

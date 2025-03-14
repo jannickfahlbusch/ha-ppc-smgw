@@ -4,14 +4,15 @@ import asyncio
 import httpx
 import urllib3
 
-from .ppcsmgw.ppc_smgw import PPCSmgw
-from .ppcsmgw.reading import Information, FakeInformation
+from custom_components.ppc_smgw.gateways.gateway import Gateway
+from custom_components.ppc_smgw.gateways.ppcsmgw.ppc_smgw import PPCSmgw
+from custom_components.ppc_smgw.gateways.reading import Information, FakeInformation
 
 # Needed as the PPC SMGW uses a self-signed certificate
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-class PPC_SMGW:
+class PPC_SMGW(Gateway):
     def __init__(
         self,
         host: str,
@@ -21,13 +22,7 @@ class PPC_SMGW:
         logger: logging.Logger,
         debug: bool = False,
     ) -> None:
-        self.host = host
-        self.username = username
-        self.password = password
-        self.websession = websession
-        self.logger = logger
-        self.debug = debug
-        self.data: Information
+        super().__init__(host, username, password, websession, logger, debug)
 
         self.ppc_smgw_client = PPCSmgw(
             host=host,
@@ -36,10 +31,6 @@ class PPC_SMGW:
             httpx_client=websession,
             logger=logger,
         )
-
-    async def check_connection(self) -> bool:
-        # TODO: Implement a basic connection check?
-        return True
 
     async def get_data(self) -> Information:
         self.logger.info("Getting data")
