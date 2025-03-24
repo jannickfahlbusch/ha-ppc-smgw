@@ -8,6 +8,8 @@ from bs4 import BeautifulSoup
 from .errors import SessionCookieStillPresentError
 from .reading import Reading, Information, OBISCode
 
+from homeassistant.util.dt import now
+
 
 class PPCSmgw:
     def __init__(
@@ -128,6 +130,7 @@ class PPCSmgw:
         self.logger.info(f"Found {len(rows)} rows")
 
         timestamp = ""
+
         readings: dict[OBISCode, Reading] = {}
 
         for row in rows:
@@ -149,7 +152,7 @@ class PPCSmgw:
                     self.logger.debug(f"Found timestamp: {row_timestamp.string}")
                     current_timestamp = datetime.strptime(
                         row_timestamp.string, "%Y-%m-%d %H:%M:%S"
-                    )
+                    ).replace(tzinfo=now().tzinfo)
                     timestamp = current_timestamp
 
                 obis_code = row.find(id="table_metervalues_col_obis").string
