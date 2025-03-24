@@ -1,6 +1,6 @@
 """PPC SMGW API."""
 
-from datetime import datetime, tzinfo
+from datetime import datetime
 
 import httpx
 from bs4 import BeautifulSoup
