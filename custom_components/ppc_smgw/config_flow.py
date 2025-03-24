@@ -66,7 +66,9 @@ def _host_in_configuration_exists(host: str, hass: HomeAssistant) -> bool:
 
 
 class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    VERSION = 1
+    VERSION = 2
+    MINOR_VERSION = 1
+
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
     data: Optional[dict[str, Any]]

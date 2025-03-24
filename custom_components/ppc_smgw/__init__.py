@@ -111,3 +111,26 @@ async def async_reload_entry(
     """Reload config entry."""
     await async_unload_entry(hass, entry)
     await async_setup_entry(hass, entry)
+
+
+async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry):
+    _LOGGER.debug(
+        "Migrating configuration from version %s.%s",
+        config_entry.version,
+        config_entry.minor_version,
+    )
+
+    if config_entry.version == 1:
+        # There was no support for other meter types/vendors in v1, so we'll default everything from v1 to be a PPC config entry
+        new_data = {**config_entry.data, CONF_METER_TYPE: Vendor.PPC}
+        hass.config_entries.async_update_entry(
+            config_entry, data=new_data, minor_version=1, version=2
+        )
+
+    _LOGGER.debug(
+        "Migration to configuration version %s.%s successful",
+        config_entry.version,
+        config_entry.minor_version,
+    )
+
+    return True
