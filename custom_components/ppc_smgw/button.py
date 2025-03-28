@@ -6,7 +6,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import RestartGatewayButtonDescription
-from .coordinator import PPC_SMGWDataUpdateCoordinator
+from .coordinator import SMGwDataUpdateCoordinator
 from .entity import SMGWEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ class RestartGatewayButton(SMGWEntity, ButtonEntity):
 
     def __init__(
         self,
-        coordinator: PPC_SMGWDataUpdateCoordinator,
+        coordinator: SMGwDataUpdateCoordinator,
         entity_description: ButtonEntityDescription,
     ) -> None:
         """Initialize the Button."""
