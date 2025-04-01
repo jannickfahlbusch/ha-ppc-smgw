@@ -6,7 +6,7 @@ import httpx
 from bs4 import BeautifulSoup
 
 from .errors import SessionCookieStillPresentError
-from .reading import Reading, Information, OBISCode
+from custom_components.ppc_smgw.gateways.reading import Reading, Information, OBISCode
 
 from homeassistant.util.dt import now
 
