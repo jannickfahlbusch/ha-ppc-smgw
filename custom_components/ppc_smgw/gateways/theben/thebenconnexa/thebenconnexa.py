@@ -51,7 +51,7 @@ class ThebenConnexaClient:
                 self.base_url,
                 auth=self._get_auth(),
                 timeout=10,
-                data={"method": "smgw-info"},
+                json={"method": "smgw-info"},
             )
         except Exception as e:
             self.logger.error(f"Failed to fetch firmware version: {e}")
