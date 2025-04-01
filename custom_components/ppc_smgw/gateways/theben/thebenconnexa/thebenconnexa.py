@@ -21,6 +21,7 @@ class ThebenConnexaClient:
         self.logger = logger
 
         self.httpx_client.headers.setdefault("Content-Type", "application/json")
+        self.httpx_client.follow_redirects = True
 
     def _get_auth(self) -> httpx.DigestAuth:
         auth = httpx.DigestAuth(self.username, self.password)
