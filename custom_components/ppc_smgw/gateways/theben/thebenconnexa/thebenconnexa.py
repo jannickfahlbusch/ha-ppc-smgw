@@ -54,15 +54,15 @@ class ThebenConnexaClient:
                 timeout=10,
                 json={"method": "smgw-info"},
             )
+
+            self.logger.debug(
+                f"Got firmware info response: \nStatus code: {response.status_code}\nRaw response: {response.text}"
+            )
+
+            smgw_info = response.json()
         except Exception as e:
             self.logger.error(f"Failed to fetch firmware version: {e}")
             return "Unknown"
-
-        smgw_info = response.json()
-
-        self.logger.debug(
-            f"Got firmware info response: \nStatus code: {response.status_code}\nRaw response: {response.text}"
-        )
 
         try:
             return f"{smgw_info['smgw-info']['firmware-info']['version']}-{smgw_info['smgw-info']['firmware-info']['hash']}"
