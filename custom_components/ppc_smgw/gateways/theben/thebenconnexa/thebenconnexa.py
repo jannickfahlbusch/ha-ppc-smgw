@@ -65,7 +65,10 @@ class ThebenConnexaClient:
             return "Unknown"
 
         try:
-            return f"{smgw_info['smgw-info']['firmware-info']['version']}-{smgw_info['smgw-info']['firmware-info']['hash']}"
+            fw_version = smgw_info['smgw-info']['firmware-info']['version']
+            fw_hash = smgw_info['smgw-info']['firmware-info']['hash']
+            # It's not necessary to render the 64 characters long hash. For comparison the first 8 letters are sufficient.
+            return f"{fw_version}-{fw_hash:.8}"
         except KeyError as e:
             self.logger.error(
                 f"Failed to get firmware info: {e}.\nReponse from SMGW: {response.json()}"
