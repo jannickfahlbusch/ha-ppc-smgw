@@ -58,7 +58,7 @@ class ThebenConnexaClient:
         except Exception as e:
             self.logger.error(f"Failed to fetch usage point ID: {e}")
             return ""
-        
+
         usage_points = usage_json["user-info"]["usage-points"]
 
         # If there are multiple ones, find the one with "taf-state" being "running"
@@ -87,7 +87,7 @@ class ThebenConnexaClient:
                     "method": "readings",
                     "database": "origin",
                     "usage-point-id": usage_point_id,
-                    "last-reading": "true"
+                    "last-reading": "true",
                 },
             )
             self.logger.debug(
@@ -105,7 +105,9 @@ class ThebenConnexaClient:
             if obis_code is None or len(readings) == 0:
                 self.logger.error("No OBIS code or no reading found.")
             elif len(readings) > 1:
-                self.logger.error("Too many readings found. Only support one at a time right now.")
+                self.logger.error(
+                    "Too many readings found. Only support one at a time right now."
+                )
             else:
                 # So far, this logic only supports one reading per channel at once
                 reading = readings[0]
@@ -142,8 +144,8 @@ class ThebenConnexaClient:
             return "Unknown"
 
         try:
-            fw_version = smgw_info['smgw-info']['firmware-info']['version']
-            fw_hash = smgw_info['smgw-info']['firmware-info']['hash']
+            fw_version = smgw_info["smgw-info"]["firmware-info"]["version"]
+            fw_hash = smgw_info["smgw-info"]["firmware-info"]["hash"]
             # It's not necessary to render the 64 characters long hash. For comparison the first 8 letters are sufficient.
             return f"{fw_version}-{fw_hash:.8}"
         except KeyError as e:
