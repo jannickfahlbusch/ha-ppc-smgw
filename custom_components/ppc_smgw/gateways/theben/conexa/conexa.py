@@ -5,7 +5,7 @@ from custom_components.ppc_smgw.gateways.reading import Information, OBISCode, R
 from datetime import datetime, timezone
 
 
-class ThebenConnexaClient:
+class ThebenConexaClient:
     def __init__(
         self,
         base_url: str,
