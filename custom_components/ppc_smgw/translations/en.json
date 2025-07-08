@@ -11,10 +11,10 @@
           }
         },
         "connection_info": {
-          "description": "Please specify the local connection information for your PPC Smart Meter Gateway.\nYou should be able to receive the credentials from your electricity distributor\n\nMake sure to configure a scan interval higher than 15 minute as the GW could block your IP if you poll too often.",
+          "description": "Please specify the local connection for your Smart Meter Gateway.\nYour electricity distributor should provide you with credentials.\n\n",
           "data": {
             "name": "Display name",
-            "host": "URL to the PPC SMGW",
+            "host": "SMGW URL",
             "username": "Username",
             "password": "Password",
             "scan_interval": "Polling Interval in minutes",
@@ -29,7 +29,7 @@
           "description": "If you need help with the configuration have a look here: https://github.com/jannickfahlbusch/ha-ppc-smgw",
           "data": {
             "name": "Display name",
-            "host": "URL to the PPC SMGW",
+            "host": "SMGW URL",
             "username": "Username",
             "password": "Password",
             "scan_interval": "Polling Interval in minutes",
