@@ -11,7 +11,7 @@
           }
         },
         "connection_info": {
-          "description": "Please specify the local connection for your Smart Meter Gateway.\nYour electricity distributor should provide you with credentials.\n\n",
+          "description": "Please specify the local connection for your Smart Meter Gateway.\nYour electricity distributor should provide you with credentials.",
           "data": {
             "name": "Display name",
             "host": "SMGW URL",
