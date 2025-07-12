@@ -1,6 +1,10 @@
 import httpx
 
-from custom_components.ppc_smgw.const import THEBEN_DEFAULT_NAME, THEBEN_MANUFACTURER, THEBEN_DEFAULT_MODEL
+from custom_components.ppc_smgw.const import (
+    THEBEN_DEFAULT_NAME,
+    THEBEN_MANUFACTURER,
+    THEBEN_DEFAULT_MODEL,
+)
 from custom_components.ppc_smgw.gateways.reading import Information, OBISCode, Reading
 from datetime import datetime, timezone
 
@@ -81,7 +85,9 @@ class ThebenConexaClient:
             self.logger.error("No usage point found with state 'running'")
             return ""
 
-        self.logger.debug(f"Using {len(usage_point_ids)} usage point ids: {usage_point_ids}")
+        self.logger.debug(
+            f"Using {len(usage_point_ids)} usage point ids: {usage_point_ids}"
+        )
         return usage_point_ids
 
     async def _get_readings(self) -> dict[OBISCode, Reading]:
@@ -113,7 +119,7 @@ class ThebenConexaClient:
                 res_json = response.json()
             except Exception as e:
                 self.logger.error(f"Failed to fetch reading: {e}")
-        
+
             for channel in res_json["readings"]["channels"]:
                 ch_readings = channel["readings"]
                 if len(ch_readings) == 0:
@@ -134,7 +140,9 @@ class ThebenConexaClient:
                 # So far, this logic only supports one reading per channel at once
                 reading = ch_readings[0]
                 readings[obis_code] = Reading(
-                    value=(float(reading["value"]) / 10000), # Watts of value? deciWatts!
+                    value=(
+                        float(reading["value"]) / 10000
+                    ),  # Watts of value? deciWatts!
                     timestamp=reading["capture-time"],
                     obis=obis_code,
                 )

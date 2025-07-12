@@ -58,6 +58,7 @@ SCHEMA_THEBEN_INFO = vol.Schema(
     }
 )
 
+
 @staticmethod
 def configured_gateways(hass: HomeAssistant):
     conf_hosts = []
@@ -154,9 +155,13 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     self.data[CONF_HOST],
                 )
 
+        data_schema = SCHEMA_PPC_INFO
+        if self.data[CONF_METER_TYPE] == Vendor.Theben:
+            data_schema = SCHEMA_THEBEN_INFO
+
         return self.async_show_form(
             step_id="connection_info",
-            data_schema=SCHEMA_THEBEN_INFO if self.data[CONF_METER_TYPE] == Vendor("Theben") else SCHEMA_PPC_INFO,
+            data_schema=data_schema,
             last_step=True,
             errors=self._errors,
         )
@@ -198,9 +203,13 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
                 # host did not change...
                 return self._update_options()
 
+        data_schema = SCHEMA_PPC_INFO
+        if self.data[CONF_METER_TYPE] == Vendor.Theben:
+            data_schema = SCHEMA_THEBEN_INFO
+
         return self.async_show_form(
             step_id="user",
-            data_schema=SCHEMA_THEBEN_INFO if self.data[CONF_METER_TYPE] == Vendor("Theben") else SCHEMA_PPC_INFO
+            data_schema=data_schema,
         )
 
     def _update_options(self):
