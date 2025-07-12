@@ -17,7 +17,7 @@ from homeassistant.loader import async_get_loaded_integration
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, CONF_METER_TYPE
 from .coordinator import SMGwDataUpdateCoordinator, ConfigEntry, Data
 from custom_components.ppc_smgw.gateways.gateway import Gateway
-from custom_components.ppc_smgw.gateways.theben.theben_connexa import ThebenConnexa
+from custom_components.ppc_smgw.gateways.theben.theben import ThebenConexa
 from custom_components.ppc_smgw.gateways.vendors import Vendor
 from custom_components.ppc_smgw.gateways.ppc.ppc_smgw import PPC_SMGW
 
@@ -69,7 +69,7 @@ async def async_setup_entry(
             )
         case Vendor.Theben:
             _LOGGER.debug(f"Initializing Theben client")
-            client = ThebenConnexa(
+            client = ThebenConexa(
                 host=entry.data[CONF_HOST],
                 username=entry.data[CONF_USERNAME],
                 password=entry.data[CONF_PASSWORD],

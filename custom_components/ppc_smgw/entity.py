@@ -4,7 +4,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import MANUFACTURER, DEFAULT_NAME
+from .const import DEFAULT_NAME
 from .coordinator import SMGwDataUpdateCoordinator
 from homeassistant.util import slugify
 
@@ -13,7 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class SMGWEntity(CoordinatorEntity[SMGwDataUpdateCoordinator]):
-    """Base class for all entities originating from PPC SMGW."""
+    """Base class for all entities originating from SMGW."""
 
     entity_description: EntityDescription
 
@@ -39,9 +39,9 @@ class SMGWEntity(CoordinatorEntity[SMGwDataUpdateCoordinator]):
                     coordinator.config_entry.entry_id,
                 ),
             },
-            name=DEFAULT_NAME,
-            manufacturer=MANUFACTURER,
-            model="SMGW",
+            name=self.get_name(),
+            manufacturer=self.get_manufacturer(),
+            model=self.get_model(),
             sw_version=self.get_firmware_version(),
         )
 
@@ -54,7 +54,7 @@ class SMGWEntity(CoordinatorEntity[SMGwDataUpdateCoordinator]):
         )
 
     def get_firmware_version(self) -> str:
-        firmware_version = "unknown"
+        firmware_version = "Unknown"
         try:
             firmware_version = self._coordinator.data.firmware_version
         except AttributeError:
@@ -63,3 +63,36 @@ class SMGWEntity(CoordinatorEntity[SMGwDataUpdateCoordinator]):
             )
 
         return firmware_version
+
+    def get_manufacturer(self) -> str:
+        manufacturer = "Unknown"
+        try:
+            manufacturer = self._coordinator.data.manufacturer
+        except AttributeError:
+            _LOGGER.debug(
+                f"Manufacturer data not available. Data available: {self._coordinator.data}"
+            )
+
+        return manufacturer
+
+    def get_model(self) -> str:
+        model = "Unknown"
+        try:
+            model = self._coordinator.data.model
+        except AttributeError:
+            _LOGGER.debug(
+                f"Model data not available. Data available: {self._coordinator.data}"
+            )
+
+        return model
+
+    def get_name(self) -> str:
+        name = DEFAULT_NAME
+        try:
+            name = self._coordinator.data.name
+        except AttributeError:
+            _LOGGER.debug(
+                f"Name not available, using default. Data available: {self._coordinator.data}"
+            )
+
+        return name

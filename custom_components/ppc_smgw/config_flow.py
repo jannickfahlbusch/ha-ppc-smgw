@@ -15,8 +15,10 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, callback
 
 from .const import (
-    DEFAULT_HOST,
-    DEFAULT_NAME,
+    PPC_URL,
+    PPC_DEFAULT_NAME,
+    THEBEN_URL,
+    THEBEN_DEFAULT_NAME,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     DEFAULT_DEBUG,
@@ -32,10 +34,10 @@ SCHEMA_VENDOR = vol.Schema(
     }
 )
 
-SCHEMA_CONNECTION_INFO = vol.Schema(
+SCHEMA_PPC_INFO = vol.Schema(
     {
-        vol.Required(CONF_NAME, default=DEFAULT_NAME): str,
-        vol.Required(CONF_HOST, default=DEFAULT_HOST): str,
+        vol.Required(CONF_NAME, default=PPC_DEFAULT_NAME): str,
+        vol.Required(CONF_HOST, default=PPC_URL): str,
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
         vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
@@ -46,6 +48,15 @@ SCHEMA_CONNECTION_INFO = vol.Schema(
     }
 )
 
+SCHEMA_THEBEN_INFO = vol.Schema(
+    {
+        vol.Required(CONF_NAME, default=THEBEN_DEFAULT_NAME): str,
+        vol.Required(CONF_HOST, default=THEBEN_URL): str,
+        vol.Required(CONF_USERNAME): str,
+        vol.Required(CONF_PASSWORD): str,
+        vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
+    }
+)
 
 @staticmethod
 def configured_gateways(hass: HomeAssistant):
@@ -112,17 +123,19 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_USERNAME,
                 CONF_PASSWORD,
                 CONF_SCAN_INTERVAL,
-                CONF_DEBUG,
             )
         ):
-            self.data[CONF_NAME] = user_input.get(CONF_NAME, DEFAULT_NAME)
-            self.data[CONF_HOST] = user_input.get(CONF_HOST, DEFAULT_HOST)
+            if self.data[CONF_METER_TYPE] == Vendor("Theben"):
+                self.data[CONF_NAME] = user_input.get(CONF_NAME, THEBEN_DEFAULT_NAME)
+            else:
+                self.data[CONF_NAME] = user_input.get(CONF_NAME, PPC_DEFAULT_NAME)
+                self.data[CONF_DEBUG] = user_input.get(CONF_DEBUG, DEFAULT_DEBUG)
+            self.data[CONF_HOST] = user_input.get(CONF_HOST, "")
             self.data[CONF_USERNAME] = user_input.get(CONF_USERNAME, "")
             self.data[CONF_PASSWORD] = user_input.get(CONF_PASSWORD, "")
             self.data[CONF_SCAN_INTERVAL] = user_input.get(
                 CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
             )
-            self.data[CONF_DEBUG] = user_input.get(CONF_DEBUG, DEFAULT_DEBUG)
 
             if _host_in_configuration_exists(self.data[CONF_HOST], self.hass):
                 self._errors[CONF_HOST] = "already_configured"
@@ -143,7 +156,7 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="connection_info",
-            data_schema=SCHEMA_CONNECTION_INFO,
+            data_schema=SCHEMA_THEBEN_INFO if self.data[CONF_METER_TYPE] == Vendor("Theben") else SCHEMA_PPC_INFO,
             last_step=True,
             errors=self._errors,
         )
@@ -185,7 +198,10 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
                 # host did not change...
                 return self._update_options()
 
-        return self.async_show_form(step_id="user", data_schema=SCHEMA_CONNECTION_INFO)
+        return self.async_show_form(
+            step_id="user",
+            data_schema=SCHEMA_THEBEN_INFO if self.data[CONF_METER_TYPE] == Vendor("Theben") else SCHEMA_PPC_INFO
+        )
 
     def _update_options(self):
         """Update config entry options."""

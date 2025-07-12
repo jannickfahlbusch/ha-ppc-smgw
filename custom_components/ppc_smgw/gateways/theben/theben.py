@@ -6,15 +6,15 @@ import urllib3
 
 from custom_components.ppc_smgw import Gateway
 from custom_components.ppc_smgw.gateways.reading import Information, FakeInformation
-from custom_components.ppc_smgw.gateways.theben.thebenconnexa.thebenconnexa import (
-    ThebenConnexaClient,
+from custom_components.ppc_smgw.gateways.theben.conexa.conexa import (
+    ThebenConexaClient,
 )
 
 # Needed as the SMGW uses a self-signed certificate
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-class ThebenConnexa(Gateway):
+class ThebenConexa(Gateway):
     def __init__(
         self,
         host: str,
@@ -26,7 +26,7 @@ class ThebenConnexa(Gateway):
     ) -> None:
         super().__init__(host, username, password, websession, logger, debug)
 
-        self.client = ThebenConnexaClient(
+        self.client = ThebenConexaClient(
             base_url=host,
             username=username,
             password=password,
