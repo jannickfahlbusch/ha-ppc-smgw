@@ -2,9 +2,11 @@
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=jannickfahlbusch&repository=ha-ppc-smgw)
 
-HomeAssistant component to read PPC SMGWs
+HomeAssistant component to read SMGWs.
 
-This custom integration allows you to integrate a PPC Smart Meter Gateway into HomeAssistant.
+This custom integration allows you to integrate the following Smart Meter Gateways into HomeAssistant:
+* PPC SMGW
+* Theben Conexa
 
 ## Installation
 
@@ -16,12 +18,19 @@ Click on the badge above or use this [link](https://my.home-assistant.io/redirec
 
 Restart your instance and head over to the integration overview (Or use [this link](https://my.home-assistant.io/redirect/config_flow_start/?domain=ppc_smgw) to directly go to the configuration of this component) to start configuring the integration.
 
+## Requirements
+
+In order to connect to your Gateway, you need at least the following information:
+
+* IP address of the SMGW within your home network
+* Credentials (Username and Password) for the Gateway
+
 ## Configuration
 
 | Option | Description |
 |--------|-------------|
 | Display Name | The Name of the resulting device |
-| URL | URL to the SMGW. This defaults to `http://192.168.188.1:8080/cgi-bin/hanservice.cgi` |
+| URL | URL to the SMGW. |
 | Username | The username for authentication with the PPC Smart Meter Gateway. You should have received this from your electricity provider |
 | Password | The password for authentication with the PPC Smart Meter Gateway. You should have received this from your electricity provider |
 | Update Interval | The interval in minutes for updating the data from the PPC Smart Meter Gateway. Defaults to 5 minutes. |

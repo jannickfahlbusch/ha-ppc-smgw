@@ -6,7 +6,13 @@ import httpx
 from bs4 import BeautifulSoup
 
 from .errors import SessionCookieStillPresentError
-from .reading import Reading, Information, OBISCode
+from custom_components.ppc_smgw.const import (
+    DEFAULT_NAME,
+    PPC_DEFAULT_NAME,
+    PPC_DEFAULT_MODEL,
+    PPC_MANUFACTURER,
+)
+from custom_components.ppc_smgw.gateways.reading import Reading, Information, OBISCode
 
 from homeassistant.util.dt import now
 
@@ -159,10 +165,7 @@ class PPCSmgw:
 
                 readings[obis_code] = Reading(
                     value=row.find(id="table_metervalues_col_wert").string,
-                    unit=row.find(id="table_metervalues_col_einheit").string,
                     timestamp=current_timestamp,
-                    isvalid=row.find(id="table_metervalues_col_istvalide").string,
-                    name=row.find(id="table_metervalues_col_name").string,
                     obis=obis_code,
                 )
 
@@ -172,9 +175,12 @@ class PPCSmgw:
         self.logger.debug(f"Readings:\n{readings}")
 
         information: Information = Information(
-            readings=readings,
+            name=PPC_DEFAULT_NAME,
+            model=PPC_DEFAULT_MODEL,
+            manufacturer=PPC_MANUFACTURER,
             firmware_version=self.firmware_version,
             last_update=timestamp,
+            readings=readings,
         )
 
         return information

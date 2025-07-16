@@ -6,7 +6,8 @@ from .const import DOMAIN
 from dataclasses import dataclass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.loader import Integration
-from .ppc_smgw import PPC_SMGW
+
+from .gateways.gateway import Gateway
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -15,7 +16,7 @@ SCAN_INTERVAL = timedelta(minutes=10)
 type ConfigEntry = ConfigEntry[Data]
 
 
-class PPC_SMGWDataUpdateCoordinator(DataUpdateCoordinator):
+class SMGwDataUpdateCoordinator(DataUpdateCoordinator):
     config_entry: ConfigEntry
 
     def __init__(
@@ -39,6 +40,6 @@ class PPC_SMGWDataUpdateCoordinator(DataUpdateCoordinator):
 class Data:
     """Data for the Blueprint integration."""
 
-    client: PPC_SMGW
-    coordinator: PPC_SMGWDataUpdateCoordinator
+    client: Gateway
+    coordinator: SMGwDataUpdateCoordinator
     integration: Integration
