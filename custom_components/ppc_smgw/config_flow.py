@@ -60,19 +60,23 @@ SCHEMA_THEBEN_INFO = vol.Schema(
 
 
 @staticmethod
-def configured_gateways(hass: HomeAssistant):
-    conf_hosts = []
+def configured_host_username_pairs(hass: HomeAssistant):
+    """Return a list of host-username pairs that are configured."""
+    configured_pairs = []
     for entry in hass.config_entries.async_entries(DOMAIN):
         if hasattr(entry, "options") and CONF_HOST in entry.options:
             conf_hosts.append(entry.options[CONF_HOST])
         else:
-            conf_hosts.append(entry.data[CONF_HOST])
-    return conf_hosts
+            configured_pairs.append((entry.data[CONF_HOST], entry.data[CONF_USERNAME]))
+    return configured_pairs
 
 
 @staticmethod
-def _host_in_configuration_exists(host: str, hass: HomeAssistant) -> bool:
-    if host in configured_gateways(hass):
+def _host_username_combination_exists(
+    host: str, username: str, hass: HomeAssistant
+) -> bool:
+    """Check if the combination of host and username already exists in configuration."""
+    if (host, username) in configured_host_username_pairs(hass):
         return True
     return False
 
@@ -138,7 +142,9 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
             )
 
-            if _host_in_configuration_exists(self.data[CONF_HOST], self.hass):
+            if _host_username_combination_exists(
+                self.data[CONF_HOST], self.data[CONF_USERNAME], self.hass
+            ):
                 self._errors[CONF_HOST] = "already_configured"
             elif await self._test_connection(
                 self.data[CONF_HOST], self.data[CONF_USERNAME], self.data[CONF_PASSWORD]
@@ -191,10 +197,14 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
         self._errors = {}
         if user_input is not None:
             self.options.update(user_input)
-            if self.data.get(CONF_HOST) != self.options.get(CONF_HOST):
-                # ok looks like the host has been changed... we need to do some things...
-                if _host_in_configuration_exists(
-                    self.options.get(CONF_HOST), self.hass
+            if self.data.get(CONF_HOST) != self.options.get(CONF_HOST) or self.data.get(
+                CONF_USERNAME
+            ) != self.options.get(CONF_USERNAME):
+                # ok looks like the host or username has been changed... we need to do some things...
+                if _host_username_combination_exists(
+                    self.options.get(CONF_HOST),
+                    self.options.get(CONF_USERNAME),
+                    self.hass,
                 ):
                     self._errors[CONF_HOST] = "already_configured"
                 else:
