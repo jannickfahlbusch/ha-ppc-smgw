@@ -65,7 +65,7 @@ def configured_host_username_pairs(hass: HomeAssistant):
     configured_pairs = []
     for entry in hass.config_entries.async_entries(DOMAIN):
         if hasattr(entry, "options") and CONF_HOST in entry.options:
-            conf_hosts.append(entry.options[CONF_HOST])
+            configured_pairs.append(entry.options[CONF_HOST])
         else:
             configured_pairs.append((entry.data[CONF_HOST], entry.data[CONF_USERNAME]))
     return configured_pairs
