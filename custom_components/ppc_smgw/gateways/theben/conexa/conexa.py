@@ -29,10 +29,7 @@ class ThebenConexaClient:
         self.httpx_client.follow_redirects = True
 
     def _get_auth(self) -> httpx.DigestAuth:
-        auth = httpx.DigestAuth(self.username, self.password)
-        self.httpx_client.auth = auth
-
-        return auth
+        return httpx.DigestAuth(self.username, self.password)
 
     async def get_data(self) -> Information:
         information = Information(

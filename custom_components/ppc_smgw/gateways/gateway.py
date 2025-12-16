@@ -31,3 +31,9 @@ class Gateway:
 
     async def reboot(self):
         pass
+
+    async def close(self) -> None:
+        try:
+            await self.websession.aclose()
+        except Exception as e:
+            self.logger.debug(f"Error closing HTTP client: {e}")
