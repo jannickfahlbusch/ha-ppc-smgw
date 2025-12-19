@@ -1,0 +1,4 @@
+# Test dependencies for Home Assistant custom component tests
+pytest
+pytest-asyncio
+pytest-homeassistant-custom-component
