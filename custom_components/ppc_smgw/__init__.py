@@ -11,7 +11,7 @@ from homeassistant.const import (
     CONF_DEBUG,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.httpx_client import get_async_client
+from homeassistant.helpers.httpx_client import create_async_httpx_client
 from homeassistant.loader import async_get_loaded_integration
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, CONF_METER_TYPE
@@ -63,7 +63,7 @@ async def async_setup_entry(
                 host=entry.data[CONF_HOST],
                 username=entry.data[CONF_USERNAME],
                 password=entry.data[CONF_PASSWORD],
-                websession=get_async_client(hass, verify_ssl=False),
+                websession=create_async_httpx_client(hass, verify_ssl=False),
                 logger=_LOGGER,
                 debug=development_mode,
             )
@@ -73,7 +73,7 @@ async def async_setup_entry(
                 host=entry.data[CONF_HOST],
                 username=entry.data[CONF_USERNAME],
                 password=entry.data[CONF_PASSWORD],
-                websession=get_async_client(hass, verify_ssl=False),
+                websession=create_async_httpx_client(hass, verify_ssl=False),
                 logger=_LOGGER,
                 debug=development_mode,
             )
@@ -101,6 +101,7 @@ async def async_unload_entry(
     entry: ConfigEntry,
 ) -> bool:
     """Handle removal of an entry."""
+    await entry.runtime_data.client.close()
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
