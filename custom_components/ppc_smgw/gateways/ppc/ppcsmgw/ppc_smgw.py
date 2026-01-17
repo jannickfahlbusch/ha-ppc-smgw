@@ -45,7 +45,7 @@ class PPCSmgw:
         return f"tkn={self._token}&action={action}"
 
     async def _login(self):
-        self.logger.info("Getting data")
+        self.logger.info("Attempting to login to PPC SMGW")
 
         try:
             response = await self.httpx_client.get(

@@ -33,7 +33,7 @@ class PPC_SMGW(Gateway):
         )
 
     async def get_data(self) -> Information:
-        self.logger.info("Getting data")
+        self.logger.info("Fetching data from Gateway")
 
         if self.debug:
             self.logger.debug("Debugging enabled, returning fake data")

@@ -32,7 +32,7 @@ class SMGwDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.debug("Fetching data from API")
             return await self.config_entry.runtime_data.client.get_data()
         except Exception as e:
-            _LOGGER.error(e)
+            _LOGGER.error(f"Unexpected error during update: {e}")
             raise e
 
 
