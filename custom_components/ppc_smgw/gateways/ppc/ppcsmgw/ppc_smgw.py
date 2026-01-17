@@ -47,6 +47,18 @@ class PPCSmgw:
     async def _login(self):
         self.logger.info("Attempting to login to PPC SMGW")
 
+        # TODO: Find a way to remove the cookie here!
+        # See https://github.com/encode/httpx/pull/3065
+        if self.httpx_client.cookies.get(name="session") is not None:
+            self.logger.debug("Session cookie still present, trying to delete it")
+
+            self.httpx_client.cookies.delete(name="session")
+            self.logger.debug("Deleted session cookie")
+
+            if "session" in self.httpx_client.cookies:
+                self.logger.error("Session cookie still present after deletion")
+                raise SessionCookieStillPresentError
+
         try:
             response = await self.httpx_client.get(
                 self.host,
