@@ -39,19 +39,13 @@ class PPCSmgw:
         self.firmware_version = None
 
     def _get_auth(self):
-        auth = httpx.DigestAuth(username=self.username, password=self.password)
-        self.httpx_client.auth = auth
-
-        return auth
+        return httpx.DigestAuth(username=self.username, password=self.password)
 
     def _post_data(self, action):
         return f"tkn={self._token}&action={action}"
 
     async def _login(self):
-        self.logger.info("Getting data")
-
-        auth = httpx.DigestAuth(username=self.username, password=self.password)
-        self.httpx_client.auth = auth
+        self.logger.info("Attempting to login to PPC SMGW")
 
         # TODO: Find a way to remove the cookie here!
         # See https://github.com/encode/httpx/pull/3065
