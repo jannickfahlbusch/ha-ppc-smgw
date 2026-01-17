@@ -101,7 +101,6 @@ async def async_unload_entry(
     entry: ConfigEntry,
 ) -> bool:
     """Handle removal of an entry."""
-    await entry.runtime_data.client.close()
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
