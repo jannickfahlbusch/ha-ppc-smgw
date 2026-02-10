@@ -26,7 +26,7 @@
     "options": {
       "step": {
         "user": {
-          "description": "If you need help with the configuration have a look here: https://github.com/jannickfahlbusch/ha-ppc-smgw",
+          "description": "If you need help with the configuration have a look here: {{repo_url}}",
           "data": {
             "name": "Display name",
             "host": "SMGW URL",
