@@ -13,6 +13,8 @@ DEFAULT_PASSWORD = ""
 DEFAULT_SCAN_INTERVAL = 5
 DEFAULT_DEBUG = False
 
+REPO_URL = "https://github.com/jannickfahlbusch/ha-ppc-smgw"
+
 PPC_DEFAULT_NAME = "PPC SMGW"
 PPC_DEFAULT_MODEL = "LTE Smart Meter Gateway"
 PPC_MANUFACTURER = "Power Plus Communications AG"

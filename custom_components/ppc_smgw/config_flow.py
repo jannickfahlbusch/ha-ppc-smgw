@@ -15,14 +15,15 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, callback
 
 from .const import (
-    PPC_URL,
-    PPC_DEFAULT_NAME,
-    THEBEN_URL,
-    THEBEN_DEFAULT_NAME,
+    CONF_METER_TYPE,
+    DEFAULT_DEBUG,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
-    DEFAULT_DEBUG,
-    CONF_METER_TYPE,
+    PPC_DEFAULT_NAME,
+    PPC_URL,
+    REPO_URL,
+    THEBEN_DEFAULT_NAME,
+    THEBEN_URL,
 )
 from .gateways.vendors import Vendor
 
@@ -108,7 +109,10 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 return await self.async_step_connection_info(user_input)
 
         return self.async_show_form(
-            step_id="user", data_schema=SCHEMA_VENDOR, errors=self._errors
+            step_id="user",
+            data_schema=SCHEMA_VENDOR,
+            errors=self._errors,
+            description_placeholders={"repo_url": REPO_URL},
         )
 
     async def async_step_connection_details(
@@ -170,6 +174,7 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=data_schema,
             last_step=True,
             errors=self._errors,
+            description_placeholders={"repo_url": REPO_URL},
         )
 
     @staticmethod
@@ -220,6 +225,7 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(
             step_id="user",
             data_schema=data_schema,
+            description_placeholders={"repo_url": REPO_URL},
         )
 
     def _update_options(self):
