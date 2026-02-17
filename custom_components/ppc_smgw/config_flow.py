@@ -19,6 +19,8 @@ from .const import (
     DEFAULT_DEBUG,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    EMH_DEFAULT_NAME,
+    EMH_URL,
     PPC_DEFAULT_NAME,
     PPC_URL,
     REPO_URL,
@@ -53,6 +55,16 @@ SCHEMA_THEBEN_INFO = vol.Schema(
     {
         vol.Required(CONF_NAME, default=THEBEN_DEFAULT_NAME): str,
         vol.Required(CONF_HOST, default=THEBEN_URL): str,
+        vol.Required(CONF_USERNAME): str,
+        vol.Required(CONF_PASSWORD): str,
+        vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
+    }
+)
+
+SCHEMA_EMH_INFO = vol.Schema(
+    {
+        vol.Required(CONF_NAME, default=EMH_DEFAULT_NAME): str,
+        vol.Required(CONF_HOST, default=EMH_URL): str,
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
         vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
@@ -136,6 +148,8 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         ):
             if self.data[CONF_METER_TYPE] == Vendor("Theben"):
                 self.data[CONF_NAME] = user_input.get(CONF_NAME, THEBEN_DEFAULT_NAME)
+            elif self.data[CONF_METER_TYPE] == Vendor("EMH"):
+                self.data[CONF_NAME] = user_input.get(CONF_NAME, EMH_DEFAULT_NAME)
             else:
                 self.data[CONF_NAME] = user_input.get(CONF_NAME, PPC_DEFAULT_NAME)
                 self.data[CONF_DEBUG] = user_input.get(CONF_DEBUG, DEFAULT_DEBUG)
@@ -168,6 +182,8 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema = SCHEMA_PPC_INFO
         if self.data[CONF_METER_TYPE] == Vendor.Theben:
             data_schema = SCHEMA_THEBEN_INFO
+        elif self.data[CONF_METER_TYPE] == Vendor.EMH:
+            data_schema = SCHEMA_EMH_INFO
 
         return self.async_show_form(
             step_id="connection_info",
@@ -221,6 +237,8 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
         data_schema = SCHEMA_PPC_INFO
         if self.data[CONF_METER_TYPE] == Vendor.Theben:
             data_schema = SCHEMA_THEBEN_INFO
+        elif self.data[CONF_METER_TYPE] == Vendor.EMH:
+            data_schema = SCHEMA_EMH_INFO
 
         return self.async_show_form(
             step_id="user",
