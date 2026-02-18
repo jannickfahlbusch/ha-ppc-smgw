@@ -25,6 +25,11 @@ THEBEN_DEFAULT_MODEL = "Conexa 3.0"
 THEBEN_MANUFACTURER = "Theben Smart Energy GmbH"
 THEBEN_URL = "https://{{INSERT_IP}}/smgw/m2m/{{INSERT_ID}}.sm/json"
 
+EMH_DEFAULT_NAME = "EMH SMGW"
+EMH_DEFAULT_MODEL = "CASA 1.1"
+EMH_MANUFACTURER = "EMH metering GmbH & Co. KG"
+EMH_URL = "https://{{INSERT_IP}}"
+
 CONF_METER_TYPE = "meter_type"
 
 SENSOR_TYPES = [
