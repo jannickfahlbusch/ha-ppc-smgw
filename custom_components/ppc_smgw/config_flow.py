@@ -42,15 +42,17 @@ SCHEMA_VENDOR = vol.Schema(
     }
 )
 
-def build_username_password_schema(default_name: str, default_url: str, allow_debugging: bool = False) -> vol.Schema:
+
+def build_username_password_schema(
+    default_name: str, default_url: str, allow_debugging: bool = False
+) -> vol.Schema:
     schema = {
         vol.Required(CONF_NAME, default=default_name): str,
         vol.Required(CONF_HOST, default=default_url): str,
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): TextSelector(
             TextSelectorConfig(
-                type=TextSelectorType.PASSWORD,
-                autocomplete="current-password"
+                type=TextSelectorType.PASSWORD, autocomplete="current-password"
             )
         ),
         vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
@@ -60,6 +62,7 @@ def build_username_password_schema(default_name: str, default_url: str, allow_de
         schema[vol.Optional(CONF_DEBUG, default=False)] = bool
 
     return vol.Schema(schema)
+
 
 @staticmethod
 def configured_host_username_pairs(hass: HomeAssistant):
@@ -169,7 +172,9 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         data_schema = build_username_password_schema(PPC_DEFAULT_NAME, PPC_URL, True)
         if self.data[CONF_METER_TYPE] == Vendor.Theben:
-            data_schema = build_username_password_schema(THEBEN_DEFAULT_NAME, THEBEN_URL)
+            data_schema = build_username_password_schema(
+                THEBEN_DEFAULT_NAME, THEBEN_URL
+            )
         elif self.data[CONF_METER_TYPE] == Vendor.EMH:
             data_schema = build_username_password_schema(EMH_DEFAULT_NAME, EMH_URL)
 
@@ -224,7 +229,9 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
 
         data_schema = build_username_password_schema(PPC_DEFAULT_NAME, PPC_URL, True)
         if self.data[CONF_METER_TYPE] == Vendor.Theben:
-            data_schema = build_username_password_schema(THEBEN_DEFAULT_NAME, THEBEN_URL)
+            data_schema = build_username_password_schema(
+                THEBEN_DEFAULT_NAME, THEBEN_URL
+            )
         elif self.data[CONF_METER_TYPE] == Vendor.EMH:
             data_schema = build_username_password_schema(EMH_DEFAULT_NAME, EMH_URL)
 
