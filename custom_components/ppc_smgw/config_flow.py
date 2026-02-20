@@ -238,6 +238,7 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(
             step_id="user",
             data_schema=data_schema,
+            errors=self._errors,
             description_placeholders={"repo_url": REPO_URL},
         )
 

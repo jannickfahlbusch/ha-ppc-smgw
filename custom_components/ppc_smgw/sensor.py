@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from homeassistant.components.sensor import SensorEntity, SensorEntityDescription
 from homeassistant.core import HomeAssistant
@@ -56,9 +57,9 @@ class OBISSensor(SMGWEntity, SensorEntity):
         """Return the native value of the sensor."""
         _LOGGER.debug(f"Data: {self.coordinator.data}")
 
-        data: Information = self.coordinator.data
+        data = self.coordinator.data
 
-        if not data:
+        if not isinstance(data, Information):
             return None
 
         if self.entity_description.key not in data.readings:
@@ -84,12 +85,12 @@ class LastUpdatedSensor(SMGWEntity, SensorEntity):
         self.entity_id = self._attr_unique_id
 
     @property
-    def native_value(self) -> str | None:
+    def native_value(self) -> datetime | None:
         """Return the native value of the sensor."""
 
-        data: Information = self.coordinator.data
+        data = self.coordinator.data
 
-        if not data:
+        if not isinstance(data, Information):
             return None
 
         return data.last_update

@@ -1,0 +1,32 @@
+name: "Tests"
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "main"
+
+jobs:
+  pytest:
+    name: "Run Tests"
+    runs-on: "ubuntu-latest"
+    steps:
+        - name: "Checkout the repository"
+          uses: "actions/checkout@v6.0.2"
+
+        - name: "Set up Python"
+          uses: actions/setup-python@v6.2.0
+          with:
+            python-version: "3.14"
+            cache: "pip"
+
+        - name: "Install dependencies"
+          run: |
+            python3 -m pip install --upgrade pip
+            python3 -m pip install -r requirements.txt
+            python3 -m pip install -r requirements_test.txt
+
+        - name: "Run tests"
+          run: python3 -m pytest tests/ -v --tb=short
