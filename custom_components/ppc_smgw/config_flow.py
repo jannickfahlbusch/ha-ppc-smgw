@@ -13,6 +13,11 @@ from homeassistant.const import (
     CONF_DEBUG,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.selector import (
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
+)
 
 from .const import (
     CONF_METER_TYPE,
@@ -37,39 +42,26 @@ SCHEMA_VENDOR = vol.Schema(
     }
 )
 
-SCHEMA_PPC_INFO = vol.Schema(
-    {
-        vol.Required(CONF_NAME, default=PPC_DEFAULT_NAME): str,
-        vol.Required(CONF_HOST, default=PPC_URL): str,
-        vol.Required(CONF_USERNAME): str,
-        vol.Required(CONF_PASSWORD): str,
-        vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
-        vol.Optional(
-            CONF_DEBUG,
-            default=False,
-        ): bool,
-    }
-)
 
-SCHEMA_THEBEN_INFO = vol.Schema(
-    {
-        vol.Required(CONF_NAME, default=THEBEN_DEFAULT_NAME): str,
-        vol.Required(CONF_HOST, default=THEBEN_URL): str,
+def build_username_password_schema(
+    default_name: str, default_url: str, allow_debugging: bool = False
+) -> vol.Schema:
+    schema = {
+        vol.Required(CONF_NAME, default=default_name): str,
+        vol.Required(CONF_HOST, default=default_url): str,
         vol.Required(CONF_USERNAME): str,
-        vol.Required(CONF_PASSWORD): str,
+        vol.Required(CONF_PASSWORD): TextSelector(
+            TextSelectorConfig(
+                type=TextSelectorType.PASSWORD, autocomplete="current-password"
+            )
+        ),
         vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
     }
-)
 
-SCHEMA_EMH_INFO = vol.Schema(
-    {
-        vol.Required(CONF_NAME, default=EMH_DEFAULT_NAME): str,
-        vol.Required(CONF_HOST, default=EMH_URL): str,
-        vol.Required(CONF_USERNAME): str,
-        vol.Required(CONF_PASSWORD): str,
-        vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
-    }
-)
+    if allow_debugging:
+        schema[vol.Optional(CONF_DEBUG, default=False)] = bool
+
+    return vol.Schema(schema)
 
 
 @staticmethod
@@ -96,7 +88,7 @@ def _host_username_combination_exists(
 
 class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 2
-    MINOR_VERSION = 1
+    MINOR_VERSION = 2
 
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
@@ -135,7 +127,6 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_connection_info(
         self, user_input: dict[str, Any] | None = None
     ):
-        _LOGGER.debug(f"Connection Info called with {user_input}")
         if all(
             k in user_input
             for k in (
@@ -179,11 +170,13 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     self.data[CONF_HOST],
                 )
 
-        data_schema = SCHEMA_PPC_INFO
+        data_schema = build_username_password_schema(PPC_DEFAULT_NAME, PPC_URL, True)
         if self.data[CONF_METER_TYPE] == Vendor.Theben:
-            data_schema = SCHEMA_THEBEN_INFO
+            data_schema = build_username_password_schema(
+                THEBEN_DEFAULT_NAME, THEBEN_URL
+            )
         elif self.data[CONF_METER_TYPE] == Vendor.EMH:
-            data_schema = SCHEMA_EMH_INFO
+            data_schema = build_username_password_schema(EMH_DEFAULT_NAME, EMH_URL)
 
         return self.async_show_form(
             step_id="connection_info",
@@ -234,11 +227,13 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
                 # host did not change...
                 return self._update_options()
 
-        data_schema = SCHEMA_PPC_INFO
+        data_schema = build_username_password_schema(PPC_DEFAULT_NAME, PPC_URL, True)
         if self.data[CONF_METER_TYPE] == Vendor.Theben:
-            data_schema = SCHEMA_THEBEN_INFO
+            data_schema = build_username_password_schema(
+                THEBEN_DEFAULT_NAME, THEBEN_URL
+            )
         elif self.data[CONF_METER_TYPE] == Vendor.EMH:
-            data_schema = SCHEMA_EMH_INFO
+            data_schema = build_username_password_schema(EMH_DEFAULT_NAME, EMH_URL)
 
         return self.async_show_form(
             step_id="user",

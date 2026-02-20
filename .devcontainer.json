@@ -1,5 +1,5 @@
 {
-    "build": { "dockerfile": "Dockerfile" },
+    "image": "ghcr.io/jannickfahlbusch/ha-ppc-smgw-devcontainer",
     "forwardPorts": [
         8123
     ],
