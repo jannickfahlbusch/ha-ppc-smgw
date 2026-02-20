@@ -46,3 +46,8 @@ class PPC_SMGW(Gateway):
             self.data = await self.ppc_smgw_client.get_data()
 
         return self.data
+
+    async def reboot(self):
+        """Reboot the gateway."""
+        self.logger.info("Rebooting Gateway")
+        return await self.ppc_smgw_client.reboot()
