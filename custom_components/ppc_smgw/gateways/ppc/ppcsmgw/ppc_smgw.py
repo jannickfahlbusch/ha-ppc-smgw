@@ -1,5 +1,6 @@
 """PPC SMGW API."""
 
+import asyncio
 from datetime import datetime
 
 import httpx
@@ -71,7 +72,7 @@ class PPCSmgw:
 
         self._cookies = {"Cookie": response.cookies["session"]}
 
-        soup = BeautifulSoup(response.content, "html.parser")
+        soup = await asyncio.to_thread(BeautifulSoup, response.content, "html.parser")
         tags = soup.find_all("input")
         self._token = tags[0].get("value")
 
@@ -101,7 +102,7 @@ class PPCSmgw:
 
         self.logger.info("Got meter readings, parsing...")
 
-        soup = BeautifulSoup(response.content, "html.parser")
+        soup = await asyncio.to_thread(BeautifulSoup, response.content, "html.parser")
 
         self._set_firwmware_version(soup)
 
@@ -122,7 +123,7 @@ class PPCSmgw:
             self.logger.error(f"Error getting meter profile: {e}")
             return []
 
-        soup = BeautifulSoup(response.content, "html.parser")
+        soup = await asyncio.to_thread(BeautifulSoup, response.content, "html.parser")
 
         table_data = soup.find("table", id="metervalue")
         rows = table_data.find_all("tr")
