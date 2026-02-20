@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 import pytz
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 
 from custom_components.ppc_smgw import async_setup_entry, async_unload_entry
 from custom_components.ppc_smgw.const import DOMAIN
@@ -63,6 +64,39 @@ class TestInit:
             result = await async_unload_entry(hass, entry)
 
         assert result is True
+
+    async def test_setup_entry_fails_on_connection_error(
+        self, hass: HomeAssistant, ppc_config_data, mock_gateway
+    ):
+        """Test that setup raises ConfigEntryNotReady when initial connection fails."""
+        entry = create_mock_config_entry(data=ppc_config_data)
+
+        mock_integration = MagicMock()
+        mock_integration.domain = DOMAIN
+        mock_coordinator = MagicMock()
+        # Simulate connection failure during first refresh
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock(
+            side_effect=Exception("Connection timeout")
+        )
+
+        with (
+            patch("custom_components.ppc_smgw.PPC_SMGW", return_value=mock_gateway),
+            patch("custom_components.ppc_smgw.create_async_httpx_client"),
+            patch(
+                "custom_components.ppc_smgw.async_get_loaded_integration",
+                return_value=mock_integration,
+            ),
+            patch(
+                "custom_components.ppc_smgw.SMGwDataUpdateCoordinator",
+                return_value=mock_coordinator,
+            ),
+        ):
+            # Setup should raise ConfigEntryNotReady, enabling HA's automatic retry
+            with pytest.raises(ConfigEntryNotReady) as exc_info:
+                await async_setup_entry(hass, entry)
+
+            # Verify the error message contains the host
+            assert ppc_config_data["host"] in str(exc_info.value)
 
 
 @pytest.mark.asyncio

@@ -41,45 +41,72 @@ SCHEMA_VENDOR = vol.Schema(
 
 
 def build_username_password_schema(
-    default_name: str, default_url: str, allow_debugging: bool = False
+    default_name: str,
+    default_url: str,
+    allow_debugging: bool = False,
+    default_username: str = "",
+    default_scan_interval: int = DEFAULT_SCAN_INTERVAL,
+    default_debug: bool = False,
 ) -> vol.Schema:
+    """Build a schema for username/password configuration.
+
+    Args:
+        default_name: Default value for the name field.
+        default_url: Default value for the host/URL field.
+        allow_debugging: Whether to include the debug option (PPC only).
+        default_username: Default value for the username field.
+        default_scan_interval: Default value for the scan interval field.
+        default_debug: Default value for the debug field (if allowed).
+
+    Returns:
+        A voluptuous Schema for the configuration form.
+    """
     schema = {
         vol.Required(CONF_NAME, default=default_name): str,
         vol.Required(CONF_HOST, default=default_url): str,
-        vol.Required(CONF_USERNAME): str,
+        vol.Required(CONF_USERNAME, default=default_username): str,
         vol.Required(CONF_PASSWORD): TextSelector(
             TextSelectorConfig(
                 type=TextSelectorType.PASSWORD, autocomplete="current-password"
             )
         ),
-        vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
+        vol.Required(CONF_SCAN_INTERVAL, default=default_scan_interval): int,
     }
 
     if allow_debugging:
-        schema[vol.Optional(CONF_DEBUG, default=False)] = bool
+        schema[vol.Optional(CONF_DEBUG, default=default_debug)] = bool
 
     return vol.Schema(schema)
 
 
-@staticmethod
-def configured_host_username_pairs(hass: HomeAssistant):
-    """Return a list of host-username pairs that are configured."""
-    configured_pairs = []
-    for entry in hass.config_entries.async_entries(DOMAIN):
-        if hasattr(entry, "options") and CONF_HOST in entry.options:
-            configured_pairs.append(entry.options[CONF_HOST])
-        else:
-            configured_pairs.append((entry.data[CONF_HOST], entry.data[CONF_USERNAME]))
-    return configured_pairs
-
-
-@staticmethod
 def _host_username_combination_exists(
-    host: str, username: str, hass: HomeAssistant
+    host: str, username: str, hass: HomeAssistant, exclude_entry_id: str | None = None
 ) -> bool:
-    """Check if the combination of host and username already exists in configuration."""
-    if (host, username) in configured_host_username_pairs(hass):
-        return True
+    """Check if the combination of host and username already exists in configuration.
+
+    Args:
+        host: The host/URL to check.
+        username: The username to check.
+        hass: Home Assistant instance.
+        exclude_entry_id: Optional entry ID to exclude from the check (for updates).
+
+    Returns:
+        True if the combination exists (excluding the specified entry), False otherwise.
+    """
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        # Skip the entry being updated
+        if exclude_entry_id and entry.entry_id == exclude_entry_id:
+            continue
+
+        # Check options first (for updated entries), fall back to data
+        entry_host = entry.options.get(CONF_HOST) or entry.data.get(CONF_HOST)
+        entry_username = entry.options.get(CONF_USERNAME) or entry.data.get(
+            CONF_USERNAME
+        )
+
+        if entry_host == host and entry_username == username:
+            return True
+
     return False
 
 
@@ -115,11 +142,6 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=self._errors,
             description_placeholders={"repo_url": REPO_URL},
         )
-
-    async def async_step_connection_details(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        pass
 
     async def async_step_connection_info(
         self, user_input: dict[str, Any] | None = None
@@ -198,18 +220,18 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
     def __init__(self, config_entry):
         """Initialize HACS options flow."""
+        self._config_entry = config_entry
         self.data = dict(config_entry.data)
         if len(dict(config_entry.options)) == 0:
             self.options = {}
         else:
-            _LOGGER.debug(f"Data: {self.data}")
             self.options = dict(config_entry.options)
 
     async def async_step_init(self, user_input=None):  # pylint: disable=unused-argument
         """Manage the options."""
         return await self.async_step_user()
 
-    async def async_step_user(self, user_input=None):
+    async def async_step_user(self, user_input: dict[str, Any] | None = None):
         """Handle a flow initialized by the user."""
         self._errors = {}
         if user_input is not None:
@@ -222,6 +244,7 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
                     self.options.get(CONF_HOST),
                     self.options.get(CONF_USERNAME),
                     self.hass,
+                    exclude_entry_id=self._config_entry.entry_id,
                 ):
                     self._errors[CONF_HOST] = "already_configured"
                 else:
@@ -230,23 +253,65 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
                 # host did not change...
                 return self._update_options()
 
-        data_schema = build_username_password_schema(
-            ppc_const.DEFAULT_NAME, ppc_const.URL, True
-        )
-        if self.data[CONF_METER_TYPE] == Vendor.Theben:
-            data_schema = build_username_password_schema(
-                theben_const.DEFAULT_NAME, theben_const.URL
-            )
-        elif self.data[CONF_METER_TYPE] == Vendor.EMH:
-            data_schema = build_username_password_schema(
-                emh_const.DEFAULT_NAME, emh_const.URL
-            )
+        # Build schema with current values based on vendor type
+        data_schema = self._build_options_schema()
 
         return self.async_show_form(
             step_id="user",
             data_schema=data_schema,
             errors=self._errors,
             description_placeholders={"repo_url": REPO_URL},
+        )
+
+    def _build_options_schema(self) -> vol.Schema:
+        """Build the options schema with current values as defaults.
+
+        Returns:
+            A voluptuous Schema populated with current configuration values.
+        """
+        # Determine vendor type and appropriate defaults
+        vendor = self.data.get(CONF_METER_TYPE)
+
+        # Get vendor-specific default name
+        if vendor == Vendor.Theben:
+            default_name = theben_const.DEFAULT_NAME
+            default_url = theben_const.DEFAULT_URL
+        elif vendor == Vendor.EMH:
+            default_name = emh_const.DEFAULT_NAME
+            default_url = emh_const.DEFAULT_URL
+        else:  # PPC or unspecified
+            default_name = ppc_const.DEFAULT_NAME
+            default_url = ppc_const.DEFAULT_URL
+
+        # Get current values, preferring options over data, then vendor-specific defaults
+        current_name = self.options.get(
+            CONF_NAME, self.data.get(CONF_NAME, default_name)
+        )
+        current_host = self.options.get(
+            CONF_HOST, self.data.get(CONF_HOST, default_url)
+        )
+        current_username = self.options.get(
+            CONF_USERNAME, self.data.get(CONF_USERNAME, "")
+        )
+        current_scan_interval = self.options.get(
+            CONF_SCAN_INTERVAL, self.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        )
+
+        # Determine if this is a PPC device (only vendor with debug option)
+        is_ppc = vendor == Vendor.PPC
+        current_debug = DEFAULT_DEBUG
+        if is_ppc:
+            current_debug = self.options.get(
+                CONF_DEBUG, self.data.get(CONF_DEBUG, DEFAULT_DEBUG)
+            )
+
+        return build_username_password_schema(
+            default_name=current_name,
+            default_url=current_host,
+            allow_debugging=is_ppc,
+            default_username=current_username,
+            default_scan_interval=current_scan_interval,
+            default_debug=current_debug,
         )
 
     def _update_options(self):

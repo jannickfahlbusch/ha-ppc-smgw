@@ -11,6 +11,7 @@ from homeassistant.const import (
     CONF_DEBUG,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.httpx_client import create_async_httpx_client
 from homeassistant.loader import async_get_loaded_integration
 
@@ -92,6 +93,7 @@ async def async_setup_entry(
             _LOGGER.error(
                 f"Unexpected error, no meter type matching for entry {entry}. Meter type: {entry.data[CONF_METER_TYPE]}"
             )
+            return False
 
     entry.runtime_data = Data(
         client=client,
@@ -99,7 +101,15 @@ async def async_setup_entry(
         coordinator=coordinator,
     )
 
-    await coordinator.async_config_entry_first_refresh()
+    # Set the config entry reference for the coordinator
+    coordinator.config_entry = entry
+
+    try:
+        await coordinator.async_config_entry_first_refresh()
+    except Exception as err:
+        raise ConfigEntryNotReady(
+            f"Failed to connect to gateway at {entry.data[CONF_HOST]}: {err}"
+        ) from err
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
