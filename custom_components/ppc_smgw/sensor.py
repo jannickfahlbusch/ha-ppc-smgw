@@ -58,6 +58,9 @@ class OBISSensor(SMGWEntity, SensorEntity):
 
         data: Information = self.coordinator.data
 
+        if not data:
+            return None
+
         if self.entity_description.key not in data.readings:
             _LOGGER.debug(f"Found no value for {self.entity_description.key}")
             return None
@@ -85,5 +88,8 @@ class LastUpdatedSensor(SMGWEntity, SensorEntity):
         """Return the native value of the sensor."""
 
         data: Information = self.coordinator.data
+
+        if not data:
+            return None
 
         return data.last_update
