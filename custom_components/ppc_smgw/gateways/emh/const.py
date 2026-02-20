@@ -1,0 +1,4 @@
+DEFAULT_MODEL = "CASA 1.1"
+DEFAULT_NAME = "EMH SMGW"
+MANUFACTURER = "EMH metering GmbH & Co. KG"
+URL = "https://{{INSERT_IP}}"
