@@ -192,7 +192,7 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
 
         data_schema = build_username_password_schema(
-            ppc_const.DEFAULT_NAME, ppc_const.URL, True
+            ppc_const.DEFAULT_NAME, ppc_const.DEFAULT_URL, True
         )
         if self.data[CONF_METER_TYPE] == Vendor.Theben:
             data_schema = build_username_password_schema(
