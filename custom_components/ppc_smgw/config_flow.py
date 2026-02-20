@@ -196,7 +196,7 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
         if self.data[CONF_METER_TYPE] == Vendor.Theben:
             data_schema = build_username_password_schema(
-                theben_const.DEFAULT_NAME, theben_const.URL
+                theben_const.DEFAULT_NAME, theben_const.DEFAULT_URL
             )
         elif self.data[CONF_METER_TYPE] == Vendor.EMH:
             data_schema = build_username_password_schema(
