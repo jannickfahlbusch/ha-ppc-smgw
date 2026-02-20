@@ -1,10 +1,6 @@
 import httpx
 
-from custom_components.ppc_smgw.const import (
-    THEBEN_DEFAULT_NAME,
-    THEBEN_MANUFACTURER,
-    THEBEN_DEFAULT_MODEL,
-)
+from ..const import DEFAULT_NAME, DEFAULT_MODEL, MANUFACTURER
 from custom_components.ppc_smgw.gateways.reading import Information, OBISCode, Reading
 from datetime import datetime, timezone
 
@@ -33,9 +29,9 @@ class ThebenConexaClient:
 
     async def get_data(self) -> Information:
         information = Information(
-            name=THEBEN_DEFAULT_NAME,
-            model=THEBEN_DEFAULT_MODEL,
-            manufacturer=THEBEN_MANUFACTURER,
+            name=DEFAULT_NAME,
+            model=DEFAULT_MODEL,
+            manufacturer=MANUFACTURER,
             firmware_version=await self._get_firmware_version(),
             last_update=datetime.now(timezone.utc),
             readings=await self._get_readings(),

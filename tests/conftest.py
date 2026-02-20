@@ -14,12 +14,11 @@ from homeassistant.const import (
 from custom_components.ppc_smgw.const import (
     CONF_METER_TYPE,
     DEFAULT_SCAN_INTERVAL,
-    PPC_DEFAULT_NAME,
-    THEBEN_DEFAULT_NAME,
-    EMH_DEFAULT_NAME,
-    PPC_URL,
     DOMAIN,
 )
+from custom_components.ppc_smgw.gateways.emh import const as emh_const
+from custom_components.ppc_smgw.gateways.theben import const as theben_const
+from custom_components.ppc_smgw.gateways.ppc import const as ppc_const
 from custom_components.ppc_smgw.gateways.vendors import Vendor
 
 
@@ -71,8 +70,8 @@ def create_mock_config_entry(
 def ppc_config_data():
     """Return mock config data for PPC vendor."""
     return {
-        CONF_METER_TYPE: "PPC",
-        CONF_NAME: PPC_DEFAULT_NAME,
+        CONF_METER_TYPE: Vendor.PPC,
+        CONF_NAME: ppc_const.DEFAULT_NAME,
         CONF_HOST: "https://192.168.1.200/cgi-bin/hanservice.cgi",
         CONF_USERNAME: "testuser",
         CONF_PASSWORD: "testpass",
@@ -85,8 +84,8 @@ def ppc_config_data():
 def theben_config_data():
     """Return mock config data for Theben vendor."""
     return {
-        CONF_METER_TYPE: "Theben",
-        CONF_NAME: THEBEN_DEFAULT_NAME,
+        CONF_METER_TYPE: Vendor.Theben,
+        CONF_NAME: theben_const.DEFAULT_NAME,
         CONF_HOST: "https://192.168.1.100/smgw/m2m/test.sm/json",
         CONF_USERNAME: "testuser",
         CONF_PASSWORD: "testpass",
@@ -98,8 +97,8 @@ def theben_config_data():
 def emh_config_data():
     """Return mock config data for EMH vendor."""
     return {
-        CONF_METER_TYPE: "EMH",
-        CONF_NAME: EMH_DEFAULT_NAME,
+        CONF_METER_TYPE: Vendor.EMH,
+        CONF_NAME: emh_const.DEFAULT_NAME,
         CONF_HOST: "https://192.168.1.150",
         CONF_USERNAME: "testuser",
         CONF_PASSWORD: "testpass",
@@ -131,8 +130,8 @@ def vendor_config_data(vendor, ppc_config_data, theben_config_data, emh_config_d
 def vendor_expected_name(vendor):
     """Return the expected default name for the parametrized vendor."""
     name_map = {
-        Vendor.PPC: PPC_DEFAULT_NAME,
-        Vendor.Theben: THEBEN_DEFAULT_NAME,
-        Vendor.EMH: EMH_DEFAULT_NAME,
+        Vendor.PPC: ppc_const.DEFAULT_NAME,
+        Vendor.Theben: theben_const.DEFAULT_NAME,
+        Vendor.EMH: emh_const.DEFAULT_NAME,
     }
     return name_map[vendor]

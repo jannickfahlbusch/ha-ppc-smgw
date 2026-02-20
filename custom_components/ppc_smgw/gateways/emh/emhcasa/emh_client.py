@@ -1,10 +1,6 @@
 import httpx
 
-from custom_components.ppc_smgw.const import (
-    EMH_DEFAULT_NAME,
-    EMH_MANUFACTURER,
-    EMH_DEFAULT_MODEL,
-)
+from ..const import DEFAULT_NAME, DEFAULT_MODEL, MANUFACTURER
 from custom_components.ppc_smgw.gateways.reading import Information, OBISCode, Reading
 from datetime import datetime, timezone
 
@@ -34,9 +30,9 @@ class EMHCasaClient:
 
     async def get_data(self) -> Information:
         information = Information(
-            name=EMH_DEFAULT_NAME,
-            model=EMH_DEFAULT_MODEL,
-            manufacturer=EMH_MANUFACTURER,
+            name=DEFAULT_NAME,
+            model=DEFAULT_MODEL,
+            manufacturer=MANUFACTURER,
             firmware_version="Unknown",
             last_update=datetime.now(timezone.utc),
             readings=await self._get_readings(),

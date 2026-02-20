@@ -24,14 +24,11 @@ from .const import (
     DEFAULT_DEBUG,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
-    EMH_DEFAULT_NAME,
-    EMH_URL,
-    PPC_DEFAULT_NAME,
-    PPC_URL,
     REPO_URL,
-    THEBEN_DEFAULT_NAME,
-    THEBEN_URL,
 )
+from .gateways.emh import const as emh_const
+from .gateways.theben import const as theben_const
+from .gateways.ppc import const as ppc_const
 from .gateways.vendors import Vendor
 
 _LOGGER = logging.getLogger(__name__)
@@ -160,11 +157,13 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
         ):
             if self.data[CONF_METER_TYPE] == Vendor("Theben"):
-                self.data[CONF_NAME] = user_input.get(CONF_NAME, THEBEN_DEFAULT_NAME)
+                self.data[CONF_NAME] = user_input.get(
+                    CONF_NAME, theben_const.DEFAULT_NAME
+                )
             elif self.data[CONF_METER_TYPE] == Vendor("EMH"):
-                self.data[CONF_NAME] = user_input.get(CONF_NAME, EMH_DEFAULT_NAME)
+                self.data[CONF_NAME] = user_input.get(CONF_NAME, emh_const.DEFAULT_NAME)
             else:
-                self.data[CONF_NAME] = user_input.get(CONF_NAME, PPC_DEFAULT_NAME)
+                self.data[CONF_NAME] = user_input.get(CONF_NAME, ppc_const.DEFAULT_NAME)
                 self.data[CONF_DEBUG] = user_input.get(CONF_DEBUG, DEFAULT_DEBUG)
             self.data[CONF_HOST] = user_input.get(CONF_HOST, "")
             self.data[CONF_USERNAME] = user_input.get(CONF_USERNAME, "")
@@ -192,13 +191,17 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     self.data[CONF_HOST],
                 )
 
-        data_schema = build_username_password_schema(PPC_DEFAULT_NAME, PPC_URL, True)
+        data_schema = build_username_password_schema(
+            ppc_const.DEFAULT_NAME, ppc_const.DEFAULT_URL, True
+        )
         if self.data[CONF_METER_TYPE] == Vendor.Theben:
             data_schema = build_username_password_schema(
-                THEBEN_DEFAULT_NAME, THEBEN_URL
+                theben_const.DEFAULT_NAME, theben_const.DEFAULT_URL
             )
         elif self.data[CONF_METER_TYPE] == Vendor.EMH:
-            data_schema = build_username_password_schema(EMH_DEFAULT_NAME, EMH_URL)
+            data_schema = build_username_password_schema(
+                emh_const.DEFAULT_NAME, emh_const.URL
+            )
 
         return self.async_show_form(
             step_id="connection_info",
@@ -271,14 +274,14 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
 
         # Get vendor-specific default name
         if vendor == Vendor.Theben:
-            default_name = THEBEN_DEFAULT_NAME
-            default_url = THEBEN_URL
+            default_name = theben_const.DEFAULT_NAME
+            default_url = theben_const.DEFAULT_URL
         elif vendor == Vendor.EMH:
-            default_name = EMH_DEFAULT_NAME
-            default_url = EMH_URL
+            default_name = emh_const.DEFAULT_NAME
+            default_url = emh_const.DEFAULT_URL
         else:  # PPC or unspecified
-            default_name = PPC_DEFAULT_NAME
-            default_url = PPC_URL
+            default_name = ppc_const.DEFAULT_NAME
+            default_url = ppc_const.DEFAULT_URL
 
         # Get current values, preferring options over data, then vendor-specific defaults
         current_name = self.options.get(
