@@ -144,3 +144,23 @@ class TestCoordinator:
         # Test: coordinator validates and returns None instead of invalid data
         result = await coordinator._async_update_data()
         assert result is None
+
+    async def test_coordinator_returns_none_when_gateway_returns_none(
+        self, hass: HomeAssistant, ppc_config_data, mock_gateway
+    ):
+        """Test that coordinator handles None from gateway (legitimate case)."""
+        # Gateway legitimately returns None (e.g. no data available yet)
+        mock_gateway.get_data.return_value = None
+
+        coordinator = SMGwDataUpdateCoordinator(hass=hass)
+        entry = create_mock_config_entry(data=ppc_config_data)
+        entry.runtime_data = Data(
+            client=mock_gateway,
+            coordinator=coordinator,
+            integration=MagicMock(),
+        )
+        coordinator.config_entry = entry
+
+        # Test: coordinator returns None without raising
+        result = await coordinator._async_update_data()
+        assert result is None

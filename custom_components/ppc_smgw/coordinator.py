@@ -42,9 +42,9 @@ class SMGwDataUpdateCoordinator(DataUpdateCoordinator[Information | None]):
                 return None
 
             return data
-        except Exception as e:
-            _LOGGER.error(f"Unexpected error during update: {e}")
-            raise e
+        except Exception:
+            _LOGGER.exception("Unexpected error during update")
+            raise
 
 
 @dataclass

@@ -38,6 +38,18 @@ class TestConfigFlow:
         assert result["step_id"] == "user"
         assert CONF_METER_TYPE in result["data_schema"].schema
 
+    async def test_user_flow_displays_errors(self, hass: HomeAssistant):
+        """Test that async_step_user surfaces errors via the errors field."""
+        flow = PPC_SMGLocalConfigFlow()
+        flow.hass = hass
+        flow._errors = {CONF_HOST: "cannot_connect"}
+
+        result = await flow.async_step_user(user_input=None)
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "user"
+        assert result["errors"] == {CONF_HOST: "cannot_connect"}
+
     async def test_user_flow_progresses_to_connection_info(
         self, hass: HomeAssistant, vendor
     ):
