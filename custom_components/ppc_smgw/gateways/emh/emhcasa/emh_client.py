@@ -18,7 +18,9 @@ class EMHCasaClient:
     ):
         if not base_url.startswith(("http://", "https://")):
             base_url = f"https://{base_url}"
-        self.base_url = base_url.rstrip("/")
+        if base_url.endswith("/") and not base_url.endswith("://"):
+            base_url = base_url[:-1]
+        self.base_url = base_url
         self.username = username
         self.password = password
         self.meter_id: str | None = None
