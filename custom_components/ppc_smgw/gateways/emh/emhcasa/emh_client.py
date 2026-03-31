@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import httpx
 
 from ..const import DEFAULT_NAME, DEFAULT_MODEL, MANUFACTURER
@@ -14,6 +16,10 @@ class EMHCasaClient:
         httpx_client: httpx.AsyncClient,
         logger,
     ):
+        if not base_url.startswith(("http://", "https://")):
+            base_url = f"https://{base_url}"
+        if base_url.endswith("/") and not base_url.endswith("://"):
+            base_url = base_url[:-1]
         self.base_url = base_url
         self.username = username
         self.password = password
@@ -108,7 +114,7 @@ class EMHCasaClient:
         now = datetime.now(timezone.utc)
 
         for meter_value in meter_reading.get("values", []):
-            logical_name = meter_value.get("logical_name", "")
+            logical_name = meter_value.get("logical_name", "").split(".")[0]
             if len(logical_name) != 12:
                 continue
 
