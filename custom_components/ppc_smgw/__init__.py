@@ -37,16 +37,15 @@ async def async_setup_entry(
     entry: ConfigEntry,
 ) -> bool:
     """Set up this integration using UI."""
-    coordinator = SMGwDataUpdateCoordinator(
-        hass=hass,
-    )
-
-    global SCAN_INTERVAL
-    SCAN_INTERVAL = timedelta(
+    scan_interval = timedelta(
         minutes=entry.options.get(
             CONF_SCAN_INTERVAL,
             entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
         )
+    )
+    coordinator = SMGwDataUpdateCoordinator(
+        hass=hass,
+        update_interval=scan_interval,
     )
 
     development_mode = False

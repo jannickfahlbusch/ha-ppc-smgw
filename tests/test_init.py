@@ -1,6 +1,6 @@
 """Tests for PPC SMGW integration initialization - simplified version."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -98,9 +98,51 @@ class TestInit:
             # Verify the error message contains the host
             assert ppc_config_data["host"] in str(exc_info.value)
 
+    async def test_setup_entry_uses_configured_scan_interval(
+        self, hass: HomeAssistant, mock_gateway
+    ):
+        """Regression test for issue #94: coordinator must use the configured scan interval."""
+        custom_interval = 42
+        from custom_components.ppc_smgw.gateways.vendors import Vendor
+        from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_SCAN_INTERVAL, CONF_USERNAME
+        from custom_components.ppc_smgw.const import CONF_METER_TYPE
+        config_data = {
+            CONF_METER_TYPE: Vendor.PPC,
+            CONF_HOST: "https://192.168.1.1",
+            CONF_USERNAME: "u",
+            CONF_PASSWORD: "p",
+            CONF_SCAN_INTERVAL: custom_interval,
+        }
+        entry = create_mock_config_entry(data=config_data)
 
-@pytest.mark.asyncio
-class TestCoordinator:
+        mock_integration = MagicMock()
+        mock_integration.domain = DOMAIN
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+
+        coordinator_cls = MagicMock(return_value=mock_coordinator)
+
+        with (
+            patch("custom_components.ppc_smgw.PPC_SMGW", return_value=mock_gateway),
+            patch("custom_components.ppc_smgw.create_async_httpx_client"),
+            patch(
+                "custom_components.ppc_smgw.async_get_loaded_integration",
+                return_value=mock_integration,
+            ),
+            patch.object(hass.config_entries, "async_forward_entry_setups"),
+            patch(
+                "custom_components.ppc_smgw.SMGwDataUpdateCoordinator",
+                coordinator_cls,
+            ),
+        ):
+            await async_setup_entry(hass, entry)
+
+        coordinator_cls.assert_called_once_with(
+            hass=hass,
+            update_interval=timedelta(minutes=custom_interval),
+        )
+
+
     """Test the data update coordinator."""
 
     async def test_coordinator_fetches_data(
@@ -125,7 +167,7 @@ class TestCoordinator:
         )
         mock_gateway.get_data.return_value = mock_data
 
-        coordinator = SMGwDataUpdateCoordinator(hass=hass)
+        coordinator = SMGwDataUpdateCoordinator(hass=hass, update_interval=timedelta(minutes=5))
         entry = create_mock_config_entry(data=ppc_config_data)
         entry.runtime_data = Data(
             client=mock_gateway,
@@ -145,7 +187,7 @@ class TestCoordinator:
 
         mock_gateway.get_data.side_effect = Exception("Connection error")
 
-        coordinator = SMGwDataUpdateCoordinator(hass=hass)
+        coordinator = SMGwDataUpdateCoordinator(hass=hass, update_interval=timedelta(minutes=5))
         entry = create_mock_config_entry(data=ppc_config_data)
         entry.runtime_data = Data(
             client=mock_gateway,
@@ -166,7 +208,7 @@ class TestCoordinator:
         # Gateway returns invalid type (dict instead of Information)
         mock_gateway.get_data.return_value = {"invalid": "dict"}
 
-        coordinator = SMGwDataUpdateCoordinator(hass=hass)
+        coordinator = SMGwDataUpdateCoordinator(hass=hass, update_interval=timedelta(minutes=5))
         entry = create_mock_config_entry(data=ppc_config_data)
         entry.runtime_data = Data(
             client=mock_gateway,
@@ -186,7 +228,7 @@ class TestCoordinator:
         # Gateway legitimately returns None (e.g. no data available yet)
         mock_gateway.get_data.return_value = None
 
-        coordinator = SMGwDataUpdateCoordinator(hass=hass)
+        coordinator = SMGwDataUpdateCoordinator(hass=hass, update_interval=timedelta(minutes=5))
         entry = create_mock_config_entry(data=ppc_config_data)
         entry.runtime_data = Data(
             client=mock_gateway,
