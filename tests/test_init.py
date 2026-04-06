@@ -104,8 +104,14 @@ class TestInit:
         """Regression test for issue #94: coordinator must use the configured scan interval."""
         custom_interval = 42
         from custom_components.ppc_smgw.gateways.vendors import Vendor
-        from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_SCAN_INTERVAL, CONF_USERNAME
+        from homeassistant.const import (
+            CONF_HOST,
+            CONF_PASSWORD,
+            CONF_SCAN_INTERVAL,
+            CONF_USERNAME,
+        )
         from custom_components.ppc_smgw.const import CONF_METER_TYPE
+
         config_data = {
             CONF_METER_TYPE: Vendor.PPC,
             CONF_HOST: "https://192.168.1.1",
@@ -142,7 +148,6 @@ class TestInit:
             update_interval=timedelta(minutes=custom_interval),
         )
 
-
     """Test the data update coordinator."""
 
     async def test_coordinator_fetches_data(
@@ -167,7 +172,9 @@ class TestInit:
         )
         mock_gateway.get_data.return_value = mock_data
 
-        coordinator = SMGwDataUpdateCoordinator(hass=hass, update_interval=timedelta(minutes=5))
+        coordinator = SMGwDataUpdateCoordinator(
+            hass=hass, update_interval=timedelta(minutes=5)
+        )
         entry = create_mock_config_entry(data=ppc_config_data)
         entry.runtime_data = Data(
             client=mock_gateway,
@@ -187,7 +194,9 @@ class TestInit:
 
         mock_gateway.get_data.side_effect = Exception("Connection error")
 
-        coordinator = SMGwDataUpdateCoordinator(hass=hass, update_interval=timedelta(minutes=5))
+        coordinator = SMGwDataUpdateCoordinator(
+            hass=hass, update_interval=timedelta(minutes=5)
+        )
         entry = create_mock_config_entry(data=ppc_config_data)
         entry.runtime_data = Data(
             client=mock_gateway,
@@ -208,7 +217,9 @@ class TestInit:
         # Gateway returns invalid type (dict instead of Information)
         mock_gateway.get_data.return_value = {"invalid": "dict"}
 
-        coordinator = SMGwDataUpdateCoordinator(hass=hass, update_interval=timedelta(minutes=5))
+        coordinator = SMGwDataUpdateCoordinator(
+            hass=hass, update_interval=timedelta(minutes=5)
+        )
         entry = create_mock_config_entry(data=ppc_config_data)
         entry.runtime_data = Data(
             client=mock_gateway,
@@ -228,7 +239,9 @@ class TestInit:
         # Gateway legitimately returns None (e.g. no data available yet)
         mock_gateway.get_data.return_value = None
 
-        coordinator = SMGwDataUpdateCoordinator(hass=hass, update_interval=timedelta(minutes=5))
+        coordinator = SMGwDataUpdateCoordinator(
+            hass=hass, update_interval=timedelta(minutes=5)
+        )
         entry = create_mock_config_entry(data=ppc_config_data)
         entry.runtime_data = Data(
             client=mock_gateway,
