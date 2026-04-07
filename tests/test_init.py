@@ -197,7 +197,6 @@ class TestInit:
         )
 
 
-
 @pytest.mark.asyncio
 class TestCoordinator:
     """Test the data update coordinator."""
