@@ -121,7 +121,7 @@ jobs:
           script: |
             const prNumber = ${{ steps.pr.outputs.number }};
             const version = '${{ steps.version.outputs.alpha }}';
-            const success = '${{ job.status }}' === 'Success';
+            const success = '${{ job.status }}' === 'success';
             const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
 
             let body;
