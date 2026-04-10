@@ -157,6 +157,7 @@ class TestOptionsFlow:
         """Test that options flow successfully updates configuration."""
 
         entry = create_mock_config_entry(data=ppc_config_data)
+        hass.config_entries._entries[entry.entry_id] = entry
         options_flow = PPCSMGWLocalOptionsFlowHandler(entry)
         options_flow.hass = hass
 
@@ -169,8 +170,52 @@ class TestOptionsFlow:
         )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
-        assert result["data"]["scan_interval"] == 10
-        assert result["data"]["debug"] is True
+        # entry.data is the single source of truth
+        assert entry.data["scan_interval"] == 10
+        assert entry.data["debug"] is True
+
+    async def test_options_flow_blank_password_keeps_existing(
+        self, hass: HomeAssistant, ppc_config_data
+    ):
+        """Test that leaving the password blank preserves the existing one."""
+
+        entry = create_mock_config_entry(data=ppc_config_data)
+        hass.config_entries._entries[entry.entry_id] = entry
+        options_flow = PPCSMGWLocalOptionsFlowHandler(entry)
+        options_flow.hass = hass
+
+        result = await options_flow.async_step_user(
+            user_input={
+                k: ppc_config_data[k]
+                for k in ["name", "host", "username", "scan_interval", "debug"]
+            }
+            | {CONF_PASSWORD: ""}
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert entry.data[CONF_PASSWORD] == ppc_config_data[CONF_PASSWORD]
+
+    async def test_options_flow_new_password_updates_entry_data(
+        self, hass: HomeAssistant, ppc_config_data
+    ):
+        """Test that providing a new password updates entry.data."""
+
+        entry = create_mock_config_entry(data=ppc_config_data)
+        hass.config_entries._entries[entry.entry_id] = entry
+        options_flow = PPCSMGWLocalOptionsFlowHandler(entry)
+        options_flow.hass = hass
+
+        new_password = "new_secret_password"
+        result = await options_flow.async_step_user(
+            user_input={
+                k: ppc_config_data[k]
+                for k in ["name", "host", "username", "scan_interval", "debug"]
+            }
+            | {CONF_PASSWORD: new_password}
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert entry.data[CONF_PASSWORD] == new_password
 
     async def test_options_flow_rejects_duplicate_host_change(
         self, hass: HomeAssistant, ppc_config_data
@@ -178,6 +223,7 @@ class TestOptionsFlow:
         """Test that changing to duplicate host/username is rejected."""
 
         entry = create_mock_config_entry(data=ppc_config_data)
+        hass.config_entries._entries[entry.entry_id] = entry
         options_flow = PPCSMGWLocalOptionsFlowHandler(entry)
         options_flow.hass = hass
 

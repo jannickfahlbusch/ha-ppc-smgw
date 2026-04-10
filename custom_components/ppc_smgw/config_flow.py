@@ -47,6 +47,7 @@ def build_username_password_schema(
     default_username: str = "",
     default_scan_interval: int = DEFAULT_SCAN_INTERVAL,
     default_debug: bool = False,
+    optional_password: bool = False,
 ) -> vol.Schema:
     """Build a schema for username/password configuration.
 
@@ -57,19 +58,26 @@ def build_username_password_schema(
         default_username: Default value for the username field.
         default_scan_interval: Default value for the scan interval field.
         default_debug: Default value for the debug field (if allowed).
+        optional_password: If True, password can be left blank (for options flow).
 
     Returns:
         A voluptuous Schema for the configuration form.
     """
+    password_selector = TextSelector(
+        TextSelectorConfig(
+            type=TextSelectorType.PASSWORD, autocomplete="current-password"
+        )
+    )
+    if optional_password:
+        password_key = vol.Optional(CONF_PASSWORD, default="")
+    else:
+        password_key = vol.Required(CONF_PASSWORD)
+
     schema = {
         vol.Required(CONF_NAME, default=default_name): str,
         vol.Required(CONF_HOST, default=default_url): str,
         vol.Required(CONF_USERNAME, default=default_username): str,
-        vol.Required(CONF_PASSWORD): TextSelector(
-            TextSelectorConfig(
-                type=TextSelectorType.PASSWORD, autocomplete="current-password"
-            )
-        ),
+        password_key: password_selector,
         vol.Required(CONF_SCAN_INTERVAL, default=default_scan_interval): int,
     }
 
@@ -235,6 +243,9 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
         """Handle a flow initialized by the user."""
         self._errors = {}
         if user_input is not None:
+            # If password is blank, keep the existing one
+            if not user_input.get(CONF_PASSWORD):
+                user_input[CONF_PASSWORD] = self.data.get(CONF_PASSWORD, "")
             self.options.update(user_input)
             if self.data.get(CONF_HOST) != self.options.get(CONF_HOST) or self.data.get(
                 CONF_USERNAME
@@ -312,8 +323,16 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
             default_username=current_username,
             default_scan_interval=current_scan_interval,
             default_debug=current_debug,
+            optional_password=True,
         )
 
     def _update_options(self):
-        """Update config entry options."""
-        return self.async_create_entry(data=self.options)
+        """Update config entry data and close the options flow.
+
+        Merges all changed values into entry.data (the single source of truth
+        read by __init__.py). Options are kept empty to avoid dual-write
+        inconsistency.
+        """
+        new_data = {**self._config_entry.data, **self.options}
+        self.hass.config_entries.async_update_entry(self._config_entry, data=new_data)
+        return self.async_create_entry(data={})
