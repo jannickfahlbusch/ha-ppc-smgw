@@ -1,0 +1,98 @@
+name: "Release"
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: "Version bump type"
+        required: true
+        default: "patch"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Calculate new version
+        id: version
+        env:
+          BUMP_TYPE: ${{ github.event.inputs.bump_type }}
+        run: |
+          CURRENT=$(jq -r '.version' custom_components/ppc_smgw/manifest.json)
+          echo "Current version: $CURRENT"
+
+          # Strip any existing pre-release suffix
+          BASE=$(echo "$CURRENT" | cut -d'-' -f1)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE"
+
+          case "$BUMP_TYPE" in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "new=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "New version: $NEW_VERSION"
+
+      - name: Update manifest.json
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.new }}
+        run: |
+          tmp=$(mktemp)
+          jq --arg v "$NEW_VERSION" '.version = $v' \
+            custom_components/ppc_smgw/manifest.json > "$tmp"
+          [ -s "$tmp" ] || { echo "jq produced empty output"; exit 1; }
+          mv "$tmp" custom_components/ppc_smgw/manifest.json
+
+      - name: Validate manifest.json
+        run: jq . custom_components/ppc_smgw/manifest.json > /dev/null
+
+      - name: Commit and tag
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.new }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add custom_components/ppc_smgw/manifest.json
+          git commit -m "chore: release v${NEW_VERSION} [skip ci]"
+          git tag "v${NEW_VERSION}"
+          git push origin main
+          git push origin "v${NEW_VERSION}"
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_VERSION: ${{ steps.version.outputs.new }}
+        run: |
+          gh release create "v${NEW_VERSION}" \
+            --title "v${NEW_VERSION}" \
+            --generate-notes \
+            --latest

@@ -1,0 +1,148 @@
+name: "Alpha Release"
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Pull Request number to build alpha from"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: read
+  issues: write
+
+concurrency:
+  group: alpha-release
+  cancel-in-progress: false
+
+jobs:
+  alpha-release:
+    if: >
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       contains(github.event.comment.body, '/build-alpha') &&
+       (github.event.comment.author_association == 'OWNER' ||
+        github.event.comment.author_association == 'MEMBER' ||
+        github.event.comment.author_association == 'COLLABORATOR'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: React to comment
+        if: github.event_name == 'issue_comment'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: 'eyes'
+            });
+
+      - name: Resolve PR context
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.eventName === 'issue_comment'
+              ? context.issue.number
+              : parseInt(context.payload.inputs.pr_number);
+
+            if (isNaN(prNumber) || prNumber <= 0) {
+              core.setFailed(`Invalid PR number: ${context.payload.inputs?.pr_number}`);
+              return;
+            }
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+
+            core.setOutput('number', prNumber);
+            core.setOutput('sha', pr.head.sha);
+
+      - name: Checkout PR code
+        uses: actions/checkout@v6.0.2
+        with:
+          ref: ${{ steps.pr.outputs.sha }}
+          fetch-depth: 0
+
+      - name: Calculate alpha version
+        id: version
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          CURRENT=$(jq -r '.version' custom_components/ppc_smgw/manifest.json)
+          # Strip any existing pre-release suffix
+          BASE=$(echo "$CURRENT" | cut -d'-' -f1)
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE"
+          NEXT_PATCH=$((PATCH + 1))
+
+          ALPHA="${MAJOR}.${MINOR}.${NEXT_PATCH}a${RUN_NUMBER}"
+          echo "alpha=$ALPHA" >> "$GITHUB_OUTPUT"
+          echo "Alpha version: $ALPHA"
+
+      - name: Update manifest.json
+        env:
+          ALPHA_VERSION: ${{ steps.version.outputs.alpha }}
+        run: |
+          tmp=$(mktemp)
+          jq --arg v "$ALPHA_VERSION" '.version = $v' \
+            custom_components/ppc_smgw/manifest.json > "$tmp"
+          [ -s "$tmp" ] || { echo "jq produced empty output"; exit 1; }
+          mv "$tmp" custom_components/ppc_smgw/manifest.json
+
+      - name: Create detached commit and tag
+        env:
+          ALPHA_VERSION: ${{ steps.version.outputs.alpha }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add custom_components/ppc_smgw/manifest.json
+          git commit -m "chore: alpha release v${ALPHA_VERSION} [skip ci]"
+          git tag "v${ALPHA_VERSION}"
+          # Push only the tag — do NOT push to any branch
+          git push origin "v${ALPHA_VERSION}"
+
+      - name: Create GitHub Pre-Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ALPHA_VERSION: ${{ steps.version.outputs.alpha }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          gh release create "v${ALPHA_VERSION}" \
+            --title "Alpha: PR #${PR_NUMBER}" \
+            --notes "Alpha build from PR #${PR_NUMBER}." \
+            --prerelease
+
+      - name: React with success
+        if: success() && github.event_name == 'issue_comment'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: 'rocket'
+            });
+
+      - name: React with failure
+        if: failure() && github.event_name == 'issue_comment'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: '-1'
+            });
