@@ -73,7 +73,10 @@ jobs:
           IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE"
           NEXT_PATCH=$((PATCH + 1))
 
-          ALPHA="${MAJOR}.${MINOR}.${NEXT_PATCH}a${RUN_NUMBER}.${RUN_ATTEMPT}"
+          # Combine run_number and run_attempt into a single identifier
+          # to avoid tag collisions on reruns
+          ALPHA_NUM=$(( RUN_NUMBER * 10 + RUN_ATTEMPT ))
+          ALPHA="${MAJOR}.${MINOR}.${NEXT_PATCH}-alpha${ALPHA_NUM}"
           echo "alpha=$ALPHA" >> "$GITHUB_OUTPUT"
           echo "Alpha version: $ALPHA"
 
