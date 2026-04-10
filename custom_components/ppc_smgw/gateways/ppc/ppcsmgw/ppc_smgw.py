@@ -65,6 +65,17 @@ class PPCSmgw:
             self.logger.error(f"Error connecting to {self.host}: {e}")
             return []
 
+        self._cookies = {}
+        if "session" not in response.cookies:
+            self.logger.error(
+                "Login to %s failed: no session cookie in response (HTTP %s). "
+                "Check your credentials and that the gateway is reachable.",
+                self.host,
+                response.status_code,
+            )
+            raise ConnectionError(
+                f"Login to {self.host} failed: no session cookie in response (HTTP {response.status_code})"
+            )
         self._cookies = {"Cookie": response.cookies["session"]}
 
         soup = await asyncio.to_thread(BeautifulSoup, response.content, "html.parser")
