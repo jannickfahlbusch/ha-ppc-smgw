@@ -38,8 +38,8 @@ jobs:
           CURRENT=$(jq -r '.version' custom_components/ppc_smgw/manifest.json)
           echo "Current version: $CURRENT"
 
-          # Strip any existing pre-release suffix
-          BASE=$(echo "$CURRENT" | cut -d'-' -f1)
+          # Strip any existing pre-release suffix (-alpha.x or aN.x)
+          BASE=$(echo "$CURRENT" | sed 's/[-a].*//')
           IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE"
 
           case "$BUMP_TYPE" in
