@@ -1,7 +1,9 @@
 {
   "domain": "ppc_smgw",
   "name": "PPC SMGW",
-  "codeowners": ["@jannickfahlbusch"],
+  "codeowners": [
+    "@jannickfahlbusch"
+  ],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/jannickfahlbusch/ha-ppc-smgw",
@@ -10,5 +12,5 @@
   "requirements": [
     "beautifulsoup4"
   ],
-  "version": "0.0.18"
+  "version": "0.0.19a4.1"
 }
