@@ -12,8 +12,7 @@ on:
 
 permissions:
   contents: write
-  pull-requests: read
-  issues: write
+  pull-requests: write
 
 concurrency:
   group: alpha-release
@@ -31,19 +30,6 @@ jobs:
         github.event.comment.author_association == 'COLLABORATOR'))
     runs-on: ubuntu-latest
     steps:
-      - name: React to comment
-        if: github.event_name == 'issue_comment'
-        continue-on-error: true
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.reactions.createForIssueComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              comment_id: context.payload.comment.id,
-              content: 'eyes'
-            });
-
       - name: Resolve PR context
         id: pr
         uses: actions/github-script@v7
@@ -128,28 +114,27 @@ jobs:
             --notes "Alpha build from PR #${PR_NUMBER}." \
             --prerelease
 
-      - name: React with success
-        if: success() && github.event_name == 'issue_comment'
-        continue-on-error: true
+      - name: Comment on PR with release link
+        if: always()
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.reactions.createForIssueComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              comment_id: context.payload.comment.id,
-              content: 'rocket'
-            });
+            const prNumber = ${{ steps.pr.outputs.number }};
+            const version = '${{ steps.version.outputs.alpha }}';
+            const success = '${{ job.status }}' === 'Success';
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
 
-      - name: React with failure
-        if: failure() && github.event_name == 'issue_comment'
-        continue-on-error: true
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.reactions.createForIssueComment({
+            let body;
+            if (success) {
+              const releaseUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/releases/tag/v${version}`;
+              body = `**Alpha release \`v${version}\` published!**\n\nInstall via HACS (enable beta versions): [v${version}](${releaseUrl})`;
+            } else {
+              body = `**Alpha release failed.** See [workflow run](${runUrl}) for details.`;
+            }
+
+            await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              comment_id: context.payload.comment.id,
-              content: '-1'
+              issue_number: prNumber,
+              body: body
             });
