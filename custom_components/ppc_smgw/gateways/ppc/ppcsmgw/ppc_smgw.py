@@ -43,6 +43,10 @@ class PPCSmgw:
     async def _login(self):
         self.logger.info("Attempting to login to PPC SMGW")
 
+        # Clear session state upfront so no stale credentials survive any failure path
+        self._cookies = {}
+        self._token = ""
+
         # TODO: Find a way to remove the cookie here!
         # See https://github.com/encode/httpx/pull/3065
         if self.httpx_client.cookies.get(name="session") is not None:
@@ -62,20 +66,14 @@ class PPCSmgw:
                 auth=self._get_auth(),
             )
         except Exception as e:
-            self.logger.error(f"Error connecting to {self.host}: {e}")
-            return []
+            msg = f"Error connecting to {self.host}: {e}"
+            self.logger.error(msg)
+            raise ConnectionError(msg) from e
 
-        self._cookies = {}
         if "session" not in response.cookies:
-            self.logger.error(
-                "Login to %s failed: no session cookie in response (HTTP %s). "
-                "Check your credentials and that the gateway is reachable.",
-                self.host,
-                response.status_code,
-            )
-            raise ConnectionError(
-                f"Login to {self.host} failed: no session cookie in response (HTTP {response.status_code})"
-            )
+            msg = f"Login to {self.host} failed: no session cookie in response (HTTP {response.status_code})"
+            self.logger.error(msg)
+            raise ConnectionError(msg)
         self._cookies = {"Cookie": response.cookies["session"]}
 
         soup = await asyncio.to_thread(BeautifulSoup, response.content, "html.parser")
