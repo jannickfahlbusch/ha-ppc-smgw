@@ -13,7 +13,10 @@ from homeassistant.const import (
     CONF_DEBUG,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.httpx_client import create_async_httpx_client
 from homeassistant.helpers.selector import (
+    SelectSelector,
+    SelectSelectorConfig,
     TextSelector,
     TextSelectorConfig,
     TextSelectorType,
@@ -185,9 +188,6 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
             elif self.data[CONF_METER_TYPE] == Vendor("EMH"):
                 self.data[CONF_NAME] = user_input.get(CONF_NAME, emh_const.DEFAULT_NAME)
-                self.data[emh_const.CONF_METER_ID] = user_input.get(
-                    emh_const.CONF_METER_ID, ""
-                )
             else:
                 self.data[CONF_NAME] = user_input.get(CONF_NAME, ppc_const.DEFAULT_NAME)
                 self.data[CONF_DEBUG] = user_input.get(CONF_DEBUG, DEFAULT_DEBUG)
@@ -197,6 +197,10 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self.data[CONF_SCAN_INTERVAL] = user_input.get(
                 CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
             )
+
+            if self.data[CONF_METER_TYPE] == Vendor.EMH:
+                # Meter selection handled in the next step via gateway discovery
+                return await self.async_step_emh_meter_select()
 
             if _host_username_combination_exists(
                 self.data[CONF_HOST],
@@ -229,7 +233,7 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
         elif self.data[CONF_METER_TYPE] == Vendor.EMH:
             data_schema = build_username_password_schema(
-                emh_const.DEFAULT_NAME, emh_const.URL, default_meter_id=""
+                emh_const.DEFAULT_NAME, emh_const.URL
             )
 
         return self.async_show_form(
@@ -237,6 +241,70 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=data_schema,
             last_step=True,
             errors=self._errors,
+            description_placeholders={"repo_url": REPO_URL},
+        )
+
+    async def _discover_emh_meter_ids(self) -> list[str]:
+        """Call the EMH gateway and return all available meter IDs."""
+        from .gateways.emh.emhcasa.emh_client import EMHCasaClient
+
+        client = EMHCasaClient(
+            base_url=self.data[CONF_HOST],
+            username=self.data[CONF_USERNAME],
+            password=self.data[CONF_PASSWORD],
+            httpx_client=create_async_httpx_client(self.hass, verify_ssl=False),
+            logger=_LOGGER,
+        )
+        return await client.discover_all_meter_ids()
+
+    async def async_step_emh_meter_select(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Let the user pick which EMH meter to monitor."""
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            meter_id = user_input.get(emh_const.CONF_METER_ID, "")
+            self.data[emh_const.CONF_METER_ID] = meter_id
+
+            if _host_username_combination_exists(
+                self.data[CONF_HOST],
+                self.data[CONF_USERNAME],
+                self.hass,
+                meter_id=meter_id,
+            ):
+                errors[emh_const.CONF_METER_ID] = "already_configured"
+            else:
+                return self.async_create_entry(
+                    title=self.data[CONF_NAME], data=self.data
+                )
+
+        meter_ids = await self._discover_emh_meter_ids()
+
+        if not meter_ids:
+            _LOGGER.warning(
+                "EMH meter discovery returned no results, creating entry with auto-detect"
+            )
+            self.data[emh_const.CONF_METER_ID] = ""
+            return self.async_create_entry(
+                title=self.data[CONF_NAME], data=self.data
+            )
+
+        options = [
+            {"value": "", "label": "Auto-detect (first available)"},
+            *[{"value": m, "label": m} for m in meter_ids],
+        ]
+
+        return self.async_show_form(
+            step_id="emh_meter_select",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(emh_const.CONF_METER_ID, default=""): SelectSelector(
+                        SelectSelectorConfig(options=options)
+                    )
+                }
+            ),
+            errors=errors,
             description_placeholders={"repo_url": REPO_URL},
         )
 

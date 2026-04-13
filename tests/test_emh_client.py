@@ -135,14 +135,33 @@ class TestBaseUrlNormalisation:
 # ---------------------------------------------------------------------------
 
 
-class TestDiscoverMeterId:
-    async def test_returns_first_sensor_domain(self):
+class TestDiscoverAllMeterIds:
+    async def test_returns_all_meter_ids(self):
         c = _make_client()
         c.httpx_client.get = AsyncMock(
-            side_effect=[
-                _make_response(_DERIVED_LIST),
-                _make_response(_DERIVED_CONTRACT),
-            ]
+            return_value=_make_response([_METER_ID, "1test000000002"])
+        )
+        meter_ids = await c.discover_all_meter_ids()
+        assert meter_ids == [_METER_ID, "1test000000002"]
+
+    async def test_returns_empty_on_connection_error(self):
+        c = _make_client()
+        c.httpx_client.get = AsyncMock(side_effect=Exception("connection refused"))
+        meter_ids = await c.discover_all_meter_ids()
+        assert meter_ids == []
+
+    async def test_returns_empty_when_no_meters(self):
+        c = _make_client()
+        c.httpx_client.get = AsyncMock(return_value=_make_response([]))
+        meter_ids = await c.discover_all_meter_ids()
+        assert meter_ids == []
+
+
+class TestDiscoverMeterId:
+    async def test_returns_first_meter(self):
+        c = _make_client()
+        c.httpx_client.get = AsyncMock(
+            return_value=_make_response([_METER_ID, "1test000000002"])
         )
         meter_id = await c._discover_meter_id()
         assert meter_id == _METER_ID
@@ -153,15 +172,9 @@ class TestDiscoverMeterId:
         meter_id = await c._discover_meter_id()
         assert meter_id is None
 
-    async def test_returns_none_when_no_sensor_domains(self):
-        contract_without_domains = {**_DERIVED_CONTRACT, "sensor_domains": []}
+    async def test_returns_none_when_no_meters(self):
         c = _make_client()
-        c.httpx_client.get = AsyncMock(
-            side_effect=[
-                _make_response(_DERIVED_LIST),
-                _make_response(contract_without_domains),
-            ]
-        )
+        c.httpx_client.get = AsyncMock(return_value=_make_response([]))
         meter_id = await c._discover_meter_id()
         assert meter_id is None
 
@@ -176,8 +189,7 @@ class TestGetReadings:
         c = _make_client()
         c.httpx_client.get = AsyncMock(
             side_effect=[
-                _make_response(_DERIVED_LIST),
-                _make_response(_DERIVED_CONTRACT),
+                _make_response([_METER_ID]),
                 _make_response(_ORIGIN_EXTENDED),
             ]
         )
@@ -218,8 +230,7 @@ class TestGetReadings:
         c = _make_client()
         c.httpx_client.get = AsyncMock(
             side_effect=[
-                _make_response(_DERIVED_LIST),
-                _make_response(_DERIVED_CONTRACT),
+                _make_response([_METER_ID]),
                 _make_response(_ORIGIN_EXTENDED),
             ]
         )

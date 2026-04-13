@@ -49,43 +49,32 @@ class EMHCasaClient:
 
         return information
 
-    async def _discover_meter_id(self) -> str | None:
-        self.logger.debug(f"Discovering meter ID from {self.base_url}")
+    async def discover_all_meter_ids(self) -> list[str]:
+        """Return all meter IDs available on this gateway via /json/metering/origin/."""
+        self.logger.debug(f"Discovering all meter IDs from {self.base_url}")
 
         try:
             response = await self.httpx_client.get(
-                f"{self.base_url}/json/metering/derived",
+                f"{self.base_url}/json/metering/origin/",
                 auth=self._get_auth(),
                 timeout=10,
             )
             self.logger.debug(
-                f"Got contract list: \nStatus code: {response.status_code}\nRaw response: {response.text}"
+                f"Got meter list: \nStatus code: {response.status_code}\nRaw response: {response.text}"
             )
-            contract_ids = response.json()
+            meter_ids: list[str] = response.json()
         except Exception as e:
-            self.logger.error(f"Failed to fetch contract list: {e}")
-            return None
+            self.logger.error(f"Failed to fetch meter list: {e}")
+            return []
 
-        for contract_id in contract_ids:
-            try:
-                response = await self.httpx_client.get(
-                    f"{self.base_url}/json/metering/derived/{contract_id}",
-                    auth=self._get_auth(),
-                    timeout=10,
-                )
-                contract = response.json()
-                self.logger.debug(f"Contract {contract_id}: {contract}")
+        self.logger.debug(f"Discovered meter IDs: {meter_ids}")
+        return meter_ids
 
-                sensor_domains = contract.get("sensor_domains", [])
-                if sensor_domains:
-                    self.logger.debug(
-                        f"Found meter ID: {sensor_domains[0]} from contract {contract_id}"
-                    )
-                    return sensor_domains[0]
-            except Exception as e:
-                self.logger.error(f"Failed to fetch contract {contract_id}: {e}")
-
-        self.logger.error("No meter ID found in any contract")
+    async def _discover_meter_id(self) -> str | None:
+        meter_ids = await self.discover_all_meter_ids()
+        if meter_ids:
+            return meter_ids[0]
+        self.logger.error("No meter ID found")
         return None
 
     async def _get_readings(self) -> dict[OBISCode, Reading]:
