@@ -199,8 +199,18 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
             if self.data[CONF_METER_TYPE] == Vendor.EMH:
-                # Meter selection handled in the next step via gateway discovery
-                return await self.async_step_emh_meter_select()
+                if not await self._test_connection(
+                    self.data[CONF_HOST],
+                    self.data[CONF_USERNAME],
+                    self.data[CONF_PASSWORD],
+                ):
+                    _LOGGER.error(
+                        "Could not connect to SMGW at %s. Check connection manually",
+                        self.data[CONF_HOST],
+                    )
+                else:
+                    # Meter selection handled in the next step via gateway discovery
+                    return await self.async_step_emh_meter_select()
 
             if _host_username_combination_exists(
                 self.data[CONF_HOST],
