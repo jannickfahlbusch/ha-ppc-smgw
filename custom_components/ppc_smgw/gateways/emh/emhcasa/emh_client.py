@@ -15,6 +15,7 @@ class EMHCasaClient:
         password: str,
         httpx_client: httpx.AsyncClient,
         logger,
+        meter_id: str | None = None,
     ):
         if not base_url.startswith(("http://", "https://")):
             base_url = f"https://{base_url}"
@@ -23,7 +24,7 @@ class EMHCasaClient:
         self.base_url = base_url
         self.username = username
         self.password = password
-        self.meter_id: str | None = None
+        self.meter_id: str | None = meter_id or None
 
         self.httpx_client = httpx_client
         self.logger = logger

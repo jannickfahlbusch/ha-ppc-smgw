@@ -23,6 +23,7 @@ class EMHGateway(Gateway):
         websession: httpx.AsyncClient,
         logger: logging.Logger,
         debug: bool = False,
+        meter_id: str | None = None,
     ) -> None:
         super().__init__(host, username, password, websession, logger, debug)
 
@@ -32,6 +33,7 @@ class EMHGateway(Gateway):
             password=password,
             httpx_client=websession,
             logger=logger,
+            meter_id=meter_id,
         )
 
     async def get_data(self) -> Information:
