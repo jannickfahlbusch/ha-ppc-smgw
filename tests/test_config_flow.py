@@ -89,7 +89,9 @@ class TestConfigFlow:
 
         with (
             patch.object(flow, "_test_connection", return_value=True),
-            patch.object(flow, "_discover_emh_meter_ids", return_value=["1test000000001"]),
+            patch.object(
+                flow, "_discover_emh_meter_ids", return_value=["1test000000001"]
+            ),
         ):
             result = await flow.async_step_connection_info(user_input=user_input)
 
@@ -110,7 +112,9 @@ class TestConfigFlow:
         flow.hass = hass
         flow.data = {**emh_config_data}
 
-        with patch.object(flow, "_discover_emh_meter_ids", return_value=["1test000000001"]):
+        with patch.object(
+            flow, "_discover_emh_meter_ids", return_value=["1test000000001"]
+        ):
             result = await flow.async_step_emh_meter_select(
                 user_input={CONF_METER_ID: "1test000000001"}
             )
@@ -229,7 +233,13 @@ class TestConfigFlow:
             result = await flow.async_step_connection_info(
                 user_input={
                     k: emh_config_data[k]
-                    for k in [CONF_NAME, CONF_HOST, CONF_USERNAME, CONF_PASSWORD, CONF_SCAN_INTERVAL]
+                    for k in [
+                        CONF_NAME,
+                        CONF_HOST,
+                        CONF_USERNAME,
+                        CONF_PASSWORD,
+                        CONF_SCAN_INTERVAL,
+                    ]
                 }
             )
 
@@ -247,7 +257,9 @@ class TestConfigFlow:
         flow.data = {**emh_config_data}
 
         with (
-            patch.object(flow, "_discover_emh_meter_ids", return_value=["1test000000001"]),
+            patch.object(
+                flow, "_discover_emh_meter_ids", return_value=["1test000000001"]
+            ),
             patch(
                 "custom_components.ppc_smgw.config_flow._host_username_combination_exists",
                 return_value=True,
