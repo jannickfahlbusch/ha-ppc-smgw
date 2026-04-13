@@ -286,9 +286,7 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "EMH meter discovery returned no results, creating entry with auto-detect"
             )
             self.data[emh_const.CONF_METER_ID] = ""
-            return self.async_create_entry(
-                title=self.data[CONF_NAME], data=self.data
-            )
+            return self.async_create_entry(title=self.data[CONF_NAME], data=self.data)
 
         options = [
             {"value": "", "label": "Auto-detect (first available)"},
