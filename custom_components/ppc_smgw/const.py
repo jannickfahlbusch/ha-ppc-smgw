@@ -2,9 +2,7 @@ from homeassistant.components.button import ButtonDeviceClass, ButtonEntityDescr
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntityDescription,
-    SensorStateClass,
 )
-from homeassistant.const import UnitOfEnergy
 
 DOMAIN = "ppc_smgw"
 DEFAULT_NAME = "SMGW"
@@ -16,28 +14,6 @@ DEFAULT_DEBUG = False
 REPO_URL = "https://github.com/jannickfahlbusch/ha-ppc-smgw"
 
 CONF_METER_TYPE = "meter_type"
-
-SENSOR_TYPES = [
-    SensorEntityDescription(
-        key="1-0:1.8.0",
-        name="Import total",
-        suggested_display_precision=5,
-        entity_registry_enabled_default=True,
-        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
-        icon="mdi:home-import-outline",
-        device_class=SensorDeviceClass.ENERGY,
-        state_class=SensorStateClass.TOTAL_INCREASING,
-    ),
-    SensorEntityDescription(
-        key="1-0:2.8.0",
-        name="Export total",
-        suggested_display_precision=5,
-        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
-        icon="mdi:home-export-outline",
-        device_class=SensorDeviceClass.ENERGY,
-        state_class=SensorStateClass.TOTAL_INCREASING,
-    ),
-]
 
 LastUpdatedSensorDescription = SensorEntityDescription(
     key="last_update",

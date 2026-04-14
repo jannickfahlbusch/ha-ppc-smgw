@@ -4,6 +4,7 @@ import httpx
 
 from ..const import DEFAULT_NAME, DEFAULT_MODEL, MANUFACTURER
 from custom_components.ppc_smgw.gateways.reading import Information, OBISCode, Reading
+from custom_components.ppc_smgw.obis import parse_obis
 from datetime import datetime, timezone
 
 
@@ -104,15 +105,11 @@ class EMHCasaClient:
         now = datetime.now(timezone.utc)
 
         for meter_value in meter_reading.get("values", []):
-            logical_name = meter_value.get("logical_name", "").split(".")[0]
-            if len(logical_name) != 12:
+            logical_name_hex = meter_value.get("logical_name", "").split(".")[0]
+            parsed = parse_obis(logical_name_hex)
+            if parsed is None:
                 continue
-
-            # Convert hex logical name to OBIS code (e.g. '0100010800FF' -> '1-0:1.8.0')
-            c = int(logical_name[4:6], 16)
-            d = int(logical_name[6:8], 16)
-            e = int(logical_name[8:10], 16)
-            obis_code = f"1-0:{c}.{d}.{e}"
+            obis_code = parsed.to_obis_string()
 
             # Scale value and convert Wh (unit 30) to kWh
             scaler = meter_value.get("scaler", 0)

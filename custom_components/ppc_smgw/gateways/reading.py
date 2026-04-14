@@ -40,6 +40,6 @@ FakeInformation: Information = Information(
             value="3.0557",
             timestamp=datetime(2024, 12, 20, 16, 0, 1, tzinfo=pytz.UTC),
             obis="1-0:2.8.0",
-        ),
+        )
     },
 )
