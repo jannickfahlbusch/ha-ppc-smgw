@@ -2,6 +2,7 @@ import httpx
 
 from ..const import DEFAULT_NAME, DEFAULT_MODEL, MANUFACTURER
 from custom_components.ppc_smgw.gateways.reading import Information, OBISCode, Reading
+from custom_components.ppc_smgw.obis import parse_obis
 from datetime import datetime, timezone
 
 
@@ -58,7 +59,7 @@ class ThebenConexaClient:
             usage_json = response.json()
         except Exception as e:
             self.logger.error(f"Failed to fetch usage point ID: {e}")
-            return ""
+            return []
 
         usage_points_json = usage_json["user-info"]["usage-points"]
         self.logger.debug(f"Received {len(usage_points_json)} usage points.")
@@ -76,7 +77,7 @@ class ThebenConexaClient:
 
         if len(usage_point_ids) == 0:
             self.logger.error("No usage point found with state 'running'")
-            return ""
+            return []
 
         self.logger.debug(
             f"Using {len(usage_point_ids)} usage point ids: {usage_point_ids}"
@@ -112,6 +113,7 @@ class ThebenConexaClient:
                 res_json = response.json()
             except Exception as e:
                 self.logger.error(f"Failed to fetch reading: {e}")
+                continue
 
             for channel in res_json["readings"]["channels"]:
                 ch_readings = channel["readings"]
@@ -123,12 +125,13 @@ class ThebenConexaClient:
                     )
 
                 obis_hex = channel["obis"]
-                if obis_hex == "0100010800ff":
-                    obis_code = "1-0:1.8.0"
-                elif obis_hex == "0100020800ff":
-                    obis_code = "1-0:2.8.0"
-                else:
-                    self.logger.error("No or unknown OBIS code.")
+                parsed = parse_obis(obis_hex)
+                if parsed is None:
+                    self.logger.warning(
+                        "Could not parse OBIS hex: %s, skipping", obis_hex
+                    )
+                    continue
+                obis_code = parsed.to_obis_string()
 
                 # So far, this logic only supports one reading per channel at once
                 reading = ch_readings[0]

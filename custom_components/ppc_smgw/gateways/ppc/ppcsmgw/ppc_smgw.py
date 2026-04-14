@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from .errors import SessionCookieStillPresentError
 from ..const import DEFAULT_NAME, DEFAULT_MODEL, MANUFACTURER
 from custom_components.ppc_smgw.gateways.reading import Reading, Information, OBISCode
+from custom_components.ppc_smgw.obis import parse_obis
 
 from homeassistant.util.dt import now
 
@@ -160,7 +161,12 @@ class PPCSmgw:
                     ).replace(tzinfo=now().tzinfo)
                     timestamp = current_timestamp
 
-                obis_code = row.find(id="table_metervalues_col_obis").string
+                obis_raw = row.find(id="table_metervalues_col_obis").string
+
+                # Normalize OBIS code to canonical A-B:C.D.E format
+                # PPC gateways may return codes with *F suffix (e.g. 1-0:1.8.0*255)
+                parsed = parse_obis(obis_raw)
+                obis_code = parsed.to_obis_string() if parsed else obis_raw
 
                 readings[obis_code] = Reading(
                     value=row.find(id="table_metervalues_col_wert").string,
