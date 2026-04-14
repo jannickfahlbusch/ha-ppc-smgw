@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a3a3a"/>
+      <stop offset="100%" stop-color="#2a2a2a"/>
+    </linearGradient>
+    <linearGradient id="screenGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a3a4a"/>
+      <stop offset="100%" stop-color="#0d2530"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Device body -->
+  <rect x="48" y="38" width="160" height="195" rx="14" ry="14" fill="url(#bodyGrad)" stroke="#555" stroke-width="2.5"/>
+
+  <!-- Inner bezel -->
+  <rect x="56" y="46" width="144" height="179" rx="10" ry="10" fill="#333" stroke="#444" stroke-width="1"/>
+
+  <!-- Screen / Display -->
+  <rect x="68" y="58" width="120" height="64" rx="6" ry="6" fill="url(#screenGrad)"/>
+
+  <!-- Display content: OBIS-style readings -->
+  <text x="78" y="82" font-family="monospace" font-size="13" fill="#6fcf97" opacity="0.95">1-0:1.8.0</text>
+  <text x="78" y="100" font-family="monospace" font-size="15" fill="#6fcf97" font-weight="bold">0012847 kWh</text>
+
+  <!-- Status LEDs row -->
+  <circle cx="82" cy="138" r="5" fill="#4caf50"/>
+  <circle cx="100" cy="138" r="5" fill="#f44336"/>
+  <circle cx="118" cy="138" r="5" fill="#ff9800"/>
+  <circle cx="136" cy="138" r="5" fill="#2196f3"/>
+  <circle cx="154" cy="138" r="5" fill="#666"/>
+
+  <!-- LED labels -->
+  <text x="82" y="155" font-family="sans-serif" font-size="7" fill="#aaa" text-anchor="middle">PWR</text>
+  <text x="100" y="155" font-family="sans-serif" font-size="7" fill="#aaa" text-anchor="middle">SEC</text>
+  <text x="118" y="155" font-family="sans-serif" font-size="7" fill="#aaa" text-anchor="middle">HAN</text>
+  <text x="136" y="155" font-family="sans-serif" font-size="7" fill="#aaa" text-anchor="middle">WAN</text>
+  <text x="154" y="155" font-family="sans-serif" font-size="7" fill="#aaa" text-anchor="middle">LMN</text>
+
+  <!-- Connection ports at bottom -->
+  <rect x="72" y="170" width="24" height="12" rx="2" ry="2" fill="#222" stroke="#555" stroke-width="1"/>
+  <rect x="104" y="170" width="24" height="12" rx="2" ry="2" fill="#222" stroke="#555" stroke-width="1"/>
+  <rect x="136" y="170" width="24" height="12" rx="2" ry="2" fill="#222" stroke="#555" stroke-width="1"/>
+  <rect x="168" y="170" width="24" height="12" rx="2" ry="2" fill="#222" stroke="#555" stroke-width="1"/>
+
+  <!-- Port labels -->
+  <text x="84" y="196" font-family="sans-serif" font-size="7" fill="#aaa" text-anchor="middle">ETH</text>
+  <text x="116" y="196" font-family="sans-serif" font-size="7" fill="#aaa" text-anchor="middle">HAN</text>
+  <text x="148" y="196" font-family="sans-serif" font-size="7" fill="#aaa" text-anchor="middle">WAN</text>
+  <text x="180" y="196" font-family="sans-serif" font-size="7" fill="#aaa" text-anchor="middle">LMN</text>
+
+  <!-- Small antenna nub -->
+  <rect x="194" y="30" width="3" height="12" rx="1.5" ry="1.5" fill="#666"/>
+
+  <!-- Wireless signal arcs (symmetrical quarter-circle arcs above antenna) -->
+  <g transform="translate(195.5, 28)" stroke="#42a5f5" stroke-width="2.5" fill="none" stroke-linecap="round">
+    <path d="M-7,-7 A10,10 0 0,1 7,-7" opacity="0.5"/>
+    <path d="M-13,-13 A18,18 0 0,1 13,-13" opacity="0.7"/>
+    <path d="M-19,-19 A27,27 0 0,1 19,-19" opacity="0.9"/>
+  </g>
+</svg>
