@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from homeassistant import config_entries
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 from homeassistant.const import (
     CONF_HOST,
     CONF_NAME,
@@ -40,29 +40,17 @@ def create_mock_config_entry(
     data: dict,
     entry_id: str = "test_entry_id",
     options: dict | None = None,
-) -> config_entries.ConfigEntry:
-    """Factory function to create ConfigEntry objects for testing.
-
-    Args:
-        data: Configuration data for the entry
-        entry_id: Unique identifier for the entry (default: "test_entry_id")
-        options: Optional options dictionary (default: empty dict)
-
-    Returns:
-        A properly configured ConfigEntry for testing
-    """
-    return config_entries.ConfigEntry(
+) -> MockConfigEntry:
+    """Factory function to create ConfigEntry objects for testing."""
+    return MockConfigEntry(
         version=2,
         minor_version=2,
         domain=DOMAIN,
         title=data.get(CONF_NAME, "Test Entry"),
         data=data,
-        source=config_entries.SOURCE_USER,
         entry_id=entry_id,
-        discovery_keys={},
         options=options or {},
         unique_id=None,
-        subentries_data={},
     )
 
 

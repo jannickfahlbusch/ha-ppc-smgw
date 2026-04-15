@@ -3,3 +3,5 @@ DEFAULT_NAME = "EMH SMGW"
 MANUFACTURER = "EMH metering GmbH & Co. KG"
 URL = "https://{{INSERT_IP}}"
 DEFAULT_URL = URL
+
+CONF_METER_ID = "meter_id"

@@ -20,6 +20,12 @@
             "scan_interval": "Polling Interval in minutes",
             "debug": "Development mode - DO NOT USE (Uses fake data)"
           }
+        },
+        "emh_meter_select": {
+          "description": "Select the meter to monitor. Choose 'Auto-detect' to use the first meter found, or pick a specific meter ID if you have multiple meters behind this gateway.",
+          "data": {
+            "meter_id": "Meter"
+          }
         }
       }
     },
@@ -33,7 +39,8 @@
             "username": "Username",
             "password": "Password",
             "scan_interval": "Polling Interval in minutes",
-            "debug": "Development mode - DO NOT USE (Uses fake data)"
+            "debug": "Development mode - DO NOT USE (Uses fake data)",
+            "meter_id": "Meter ID (EMH only — leave blank for auto-detect)"
           },
           "data_description": {
             "password": "Leave blank to keep the current password"

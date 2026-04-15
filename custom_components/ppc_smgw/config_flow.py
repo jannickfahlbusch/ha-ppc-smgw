@@ -13,7 +13,10 @@ from homeassistant.const import (
     CONF_DEBUG,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.httpx_client import create_async_httpx_client
 from homeassistant.helpers.selector import (
+    SelectSelector,
+    SelectSelectorConfig,
     TextSelector,
     TextSelectorConfig,
     TextSelectorType,
@@ -48,6 +51,7 @@ def build_username_password_schema(
     default_scan_interval: int = DEFAULT_SCAN_INTERVAL,
     default_debug: bool = False,
     optional_password: bool = False,
+    default_meter_id: str | None = None,
 ) -> vol.Schema:
     """Build a schema for username/password configuration.
 
@@ -59,6 +63,7 @@ def build_username_password_schema(
         default_scan_interval: Default value for the scan interval field.
         default_debug: Default value for the debug field (if allowed).
         optional_password: If True, password can be left blank (for options flow).
+        default_meter_id: If not None, include an optional meter_id field (EMH only).
 
     Returns:
         A voluptuous Schema for the configuration form.
@@ -84,19 +89,30 @@ def build_username_password_schema(
     if allow_debugging:
         schema[vol.Optional(CONF_DEBUG, default=default_debug)] = bool
 
+    if default_meter_id is not None:
+        schema[vol.Optional(emh_const.CONF_METER_ID, default=default_meter_id)] = str
+
     return vol.Schema(schema)
 
 
 def _host_username_combination_exists(
-    host: str, username: str, hass: HomeAssistant, exclude_entry_id: str | None = None
+    host: str,
+    username: str,
+    hass: HomeAssistant,
+    exclude_entry_id: str | None = None,
+    meter_id: str = "",
 ) -> bool:
-    """Check if the combination of host and username already exists in configuration.
+    """Check if the combination of host, username (and meter_id) already exists.
+
+    For EMH entries, meter_id is part of the unique key so that multiple instances
+    of the same gateway with different meters are allowed.
 
     Args:
         host: The host/URL to check.
         username: The username to check.
         hass: Home Assistant instance.
         exclude_entry_id: Optional entry ID to exclude from the check (for updates).
+        meter_id: Meter ID to include in the uniqueness check (EMH only, default "").
 
     Returns:
         True if the combination exists (excluding the specified entry), False otherwise.
@@ -113,7 +129,9 @@ def _host_username_combination_exists(
         )
 
         if entry_host == host and entry_username == username:
-            return True
+            entry_meter_id = entry.data.get(emh_const.CONF_METER_ID, "")
+            if entry_meter_id == meter_id:
+                return True
 
     return False
 
@@ -180,8 +198,25 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
             )
 
+            if self.data[CONF_METER_TYPE] == Vendor.EMH:
+                if not await self._test_connection(
+                    self.data[CONF_HOST],
+                    self.data[CONF_USERNAME],
+                    self.data[CONF_PASSWORD],
+                ):
+                    _LOGGER.error(
+                        "Could not connect to SMGW at %s. Check connection manually",
+                        self.data[CONF_HOST],
+                    )
+                else:
+                    # Meter selection handled in the next step via gateway discovery
+                    return await self.async_step_emh_meter_select()
+
             if _host_username_combination_exists(
-                self.data[CONF_HOST], self.data[CONF_USERNAME], self.hass
+                self.data[CONF_HOST],
+                self.data[CONF_USERNAME],
+                self.hass,
+                meter_id=self.data.get(emh_const.CONF_METER_ID, ""),
             ):
                 self._errors[CONF_HOST] = "already_configured"
             elif await self._test_connection(
@@ -216,6 +251,68 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=data_schema,
             last_step=True,
             errors=self._errors,
+            description_placeholders={"repo_url": REPO_URL},
+        )
+
+    async def _discover_emh_meter_ids(self) -> list[str]:
+        """Call the EMH gateway and return all available meter IDs."""
+        from .gateways.emh.emhcasa.emh_client import EMHCasaClient
+
+        client = EMHCasaClient(
+            base_url=self.data[CONF_HOST],
+            username=self.data[CONF_USERNAME],
+            password=self.data[CONF_PASSWORD],
+            httpx_client=create_async_httpx_client(self.hass, verify_ssl=False),
+            logger=_LOGGER,
+        )
+        return await client.discover_all_meter_ids()
+
+    async def async_step_emh_meter_select(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Let the user pick which EMH meter to monitor."""
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            meter_id = user_input.get(emh_const.CONF_METER_ID, "")
+            self.data[emh_const.CONF_METER_ID] = meter_id
+
+            if _host_username_combination_exists(
+                self.data[CONF_HOST],
+                self.data[CONF_USERNAME],
+                self.hass,
+                meter_id=meter_id,
+            ):
+                errors[emh_const.CONF_METER_ID] = "already_configured"
+            else:
+                return self.async_create_entry(
+                    title=self.data[CONF_NAME], data=self.data
+                )
+
+        meter_ids = await self._discover_emh_meter_ids()
+
+        if not meter_ids:
+            _LOGGER.warning(
+                "EMH meter discovery returned no results, creating entry with auto-detect"
+            )
+            self.data[emh_const.CONF_METER_ID] = ""
+            return self.async_create_entry(title=self.data[CONF_NAME], data=self.data)
+
+        options = [
+            {"value": "", "label": "Auto-detect (first available)"},
+            *[{"value": m, "label": m} for m in meter_ids],
+        ]
+
+        return self.async_show_form(
+            step_id="emh_meter_select",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(emh_const.CONF_METER_ID, default=""): SelectSelector(
+                        SelectSelectorConfig(options=options)
+                    )
+                }
+            ),
+            errors=errors,
             description_placeholders={"repo_url": REPO_URL},
         )
 
@@ -256,6 +353,7 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
                     self.options.get(CONF_USERNAME),
                     self.hass,
                     exclude_entry_id=self._config_entry.entry_id,
+                    meter_id=self.options.get(emh_const.CONF_METER_ID, ""),
                 ):
                     self._errors[CONF_HOST] = "already_configured"
                 else:
@@ -316,6 +414,14 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
                 CONF_DEBUG, self.data.get(CONF_DEBUG, DEFAULT_DEBUG)
             )
 
+        # For EMH, include the meter_id field
+        is_emh = vendor == Vendor.EMH
+        current_meter_id = None
+        if is_emh:
+            current_meter_id = self.options.get(
+                emh_const.CONF_METER_ID, self.data.get(emh_const.CONF_METER_ID, "")
+            )
+
         return build_username_password_schema(
             default_name=current_name,
             default_url=current_host,
@@ -324,6 +430,7 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
             default_scan_interval=current_scan_interval,
             default_debug=current_debug,
             optional_password=True,
+            default_meter_id=current_meter_id,
         )
 
     def _update_options(self):

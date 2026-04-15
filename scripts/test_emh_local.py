@@ -6,11 +6,14 @@ Requirements:  pip install httpx
 
 Usage:
     source .venv/bin/activate
-    python scripts/test_emh_local.py <host> <username> <password>
+    python scripts/test_emh_local.py <host> <username> <password> [meter_id]
 
-Example:
-    source .venv/bin/activate
+Examples:
+    # Auto-discover meter and read data
     python scripts/test_emh_local.py https://192.168.33.2 admin secret
+
+    # Use a specific meter ID
+    python scripts/test_emh_local.py https://192.168.33.2 admin secret 1emh1234567890
 """
 
 import asyncio
@@ -121,7 +124,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("emh_test")
 
 
-async def main(host: str, username: str, password: str) -> None:
+async def main(host: str, username: str, password: str, meter_id: str = "") -> None:
     import httpx
 
     async with httpx.AsyncClient(verify=False) as client:
@@ -131,12 +134,20 @@ async def main(host: str, username: str, password: str) -> None:
             password=password,
             httpx_client=client,
             logger=logger,
+            meter_id=meter_id or None,
         )
+
+        print("\n=== Meter discovery (/json/metering/origin/) ===")
+        meter_ids = await emh.discover_all_meter_ids()
+        if meter_ids:
+            for m in meter_ids:
+                print(f"  {m}")
+        else:
+            print("  (none found)")
+
+        print(f"\n=== Readings (meter_id={meter_id or 'auto-detect'}) ===")
         info = await emh.get_data()
-        print("\n=== Result ===")
         print(f"Name:     {info.name}")
-        print(f"Model:    {info.model}")
-        print(f"Firmware: {info.firmware_version}")
         print(f"Updated:  {info.last_update}")
         print(f"Readings ({len(info.readings)}):")
         for obis, reading in info.readings.items():
@@ -144,7 +155,8 @@ async def main(host: str, username: str, password: str) -> None:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
+    if len(sys.argv) not in (4, 5):
         print(__doc__)
         sys.exit(1)
-    asyncio.run(main(sys.argv[1], sys.argv[2], sys.argv[3]))
+    meter_id = sys.argv[4] if len(sys.argv) == 5 else ""
+    asyncio.run(main(sys.argv[1], sys.argv[2], sys.argv[3], meter_id))

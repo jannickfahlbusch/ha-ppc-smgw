@@ -16,6 +16,7 @@ from homeassistant.helpers.httpx_client import create_async_httpx_client
 from homeassistant.loader import async_get_loaded_integration
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, CONF_METER_TYPE
+from .gateways.emh.const import CONF_METER_ID as EMH_CONF_METER_ID
 from .coordinator import SMGwDataUpdateCoordinator, ConfigEntry, Data
 from custom_components.ppc_smgw.gateways.gateway import Gateway
 from custom_components.ppc_smgw.gateways.emh.emh import EMHGateway
@@ -87,6 +88,7 @@ async def async_setup_entry(
                 websession=create_async_httpx_client(hass, verify_ssl=False),
                 logger=_LOGGER,
                 debug=development_mode,
+                meter_id=entry.data.get(EMH_CONF_METER_ID) or None,
             )
         case _:
             _LOGGER.error(

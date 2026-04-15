@@ -65,7 +65,11 @@ class TestConfigFlow:
     async def test_connection_info_creates_entry(
         self, hass: HomeAssistant, vendor, vendor_config_data, vendor_expected_name
     ):
-        """Test that valid connection info creates entry (parametrized for all vendors)."""
+        """Test that valid connection info creates entry (parametrized for all vendors).
+
+        For EMH the flow proceeds to the meter-select step instead of creating
+        the entry immediately, so we assert FORM + correct step_id there.
+        """
         flow = PPC_SMGLocalConfigFlow()
         flow.hass = hass
         flow.data = {CONF_METER_TYPE: vendor}
@@ -83,11 +87,82 @@ class TestConfigFlow:
         if CONF_DEBUG in vendor_config_data:
             user_input[CONF_DEBUG] = vendor_config_data[CONF_DEBUG]
 
-        with patch.object(flow, "_test_connection", return_value=True):
+        with (
+            patch.object(flow, "_test_connection", return_value=True),
+            patch.object(
+                flow, "_discover_emh_meter_ids", return_value=["1test000000001"]
+            ),
+        ):
             result = await flow.async_step_connection_info(user_input=user_input)
 
+        if vendor == Vendor.EMH:
+            assert result["type"] == FlowResultType.FORM
+            assert result["step_id"] == "emh_meter_select"
+        else:
+            assert result["type"] == FlowResultType.CREATE_ENTRY
+            assert result["title"] == vendor_expected_name
+
+    async def test_emh_meter_select_creates_entry(
+        self, hass: HomeAssistant, emh_config_data
+    ):
+        """Test that selecting a meter in the EMH meter-select step creates the entry."""
+        from custom_components.ppc_smgw.gateways.emh.const import CONF_METER_ID
+
+        flow = PPC_SMGLocalConfigFlow()
+        flow.hass = hass
+        flow.data = {**emh_config_data}
+
+        with patch.object(
+            flow, "_discover_emh_meter_ids", return_value=["1test000000001"]
+        ):
+            result = await flow.async_step_emh_meter_select(
+                user_input={CONF_METER_ID: "1test000000001"}
+            )
+
         assert result["type"] == FlowResultType.CREATE_ENTRY
-        assert result["title"] == vendor_expected_name
+        assert result["title"] == emh_config_data[CONF_NAME]
+        assert result["data"][CONF_METER_ID] == "1test000000001"
+
+    async def test_emh_meter_select_shows_form_for_multiple_meters(
+        self, hass: HomeAssistant, emh_config_data
+    ):
+        """Test that the meter-select step shows a form when multiple meters are found."""
+        from custom_components.ppc_smgw.gateways.emh.const import CONF_METER_ID
+
+        flow = PPC_SMGLocalConfigFlow()
+        flow.hass = hass
+        flow.data = {**emh_config_data}
+
+        meter_ids = ["1test000000001", "1test000000002", "1test000000003"]
+        with patch.object(flow, "_discover_emh_meter_ids", return_value=meter_ids):
+            result = await flow.async_step_emh_meter_select(user_input=None)
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "emh_meter_select"
+
+        # Verify any of the discovered meters can be selected
+        with patch.object(flow, "_discover_emh_meter_ids", return_value=meter_ids):
+            result = await flow.async_step_emh_meter_select(
+                user_input={CONF_METER_ID: "1test000000002"}
+            )
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_METER_ID] == "1test000000002"
+
+    async def test_emh_meter_select_auto_detect_on_no_meters(
+        self, hass: HomeAssistant, emh_config_data
+    ):
+        """Test that discovery failure falls back to auto-detect and creates the entry."""
+        from custom_components.ppc_smgw.gateways.emh.const import CONF_METER_ID
+
+        flow = PPC_SMGLocalConfigFlow()
+        flow.hass = hass
+        flow.data = {**emh_config_data}
+
+        with patch.object(flow, "_discover_emh_meter_ids", return_value=[]):
+            result = await flow.async_step_emh_meter_select(user_input=None)
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert result["data"][CONF_METER_ID] == ""
 
     async def test_duplicate_host_username_rejected(
         self, hass: HomeAssistant, ppc_config_data
@@ -145,6 +220,58 @@ class TestConfigFlow:
 
         assert result["type"] == FlowResultType.FORM
         assert result["step_id"] == "connection_info"
+
+    async def test_emh_connection_failure_shows_form_again(
+        self, hass: HomeAssistant, emh_config_data
+    ):
+        """Test that a failed connection test for EMH shows the form again."""
+        flow = PPC_SMGLocalConfigFlow()
+        flow.hass = hass
+        flow.data = {CONF_METER_TYPE: Vendor.EMH}
+
+        with patch.object(flow, "_test_connection", return_value=False):
+            result = await flow.async_step_connection_info(
+                user_input={
+                    k: emh_config_data[k]
+                    for k in [
+                        CONF_NAME,
+                        CONF_HOST,
+                        CONF_USERNAME,
+                        CONF_PASSWORD,
+                        CONF_SCAN_INTERVAL,
+                    ]
+                }
+            )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "connection_info"
+
+    async def test_emh_meter_select_rejects_duplicate_meter(
+        self, hass: HomeAssistant, emh_config_data
+    ):
+        """Test that selecting an already-configured meter shows an error."""
+        from custom_components.ppc_smgw.gateways.emh.const import CONF_METER_ID
+
+        flow = PPC_SMGLocalConfigFlow()
+        flow.hass = hass
+        flow.data = {**emh_config_data}
+
+        with (
+            patch.object(
+                flow, "_discover_emh_meter_ids", return_value=["1test000000001"]
+            ),
+            patch(
+                "custom_components.ppc_smgw.config_flow._host_username_combination_exists",
+                return_value=True,
+            ),
+        ):
+            result = await flow.async_step_emh_meter_select(
+                user_input={CONF_METER_ID: "1test000000001"}
+            )
+
+        assert result["type"] == FlowResultType.FORM
+        assert result["step_id"] == "emh_meter_select"
+        assert CONF_METER_ID in result["errors"]
 
 
 @pytest.mark.asyncio

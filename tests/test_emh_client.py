@@ -12,26 +12,6 @@ from custom_components.ppc_smgw.gateways.emh.emhcasa.emh_client import EMHCasaCl
 # Anonymised fixture data matching real device response shapes
 # ---------------------------------------------------------------------------
 
-_CONTRACT_ID = "0100aabbccdd00.test_contract_taf01000014000000000001.sm"
-
-_DERIVED_LIST = [_CONTRACT_ID]
-
-_DERIVED_CONTRACT = {
-    "active_tariff": -1,
-    "capture_period": 900,
-    "emt_channel_name": "testp01100001v3",
-    "logical_name": _CONTRACT_ID,
-    "metering_point_id": "DE0000000000000000000000000000001",
-    "sensor_domains": ["1test000000001"],
-    "taf_identifier": "test_contract_taf01000014000000000001.sm",
-    "taf_name": "test_contract_taf01000014000000000001",
-    "taf_state": "archive",
-    "taf_type": "TAF-1",
-    "user_domain": "0000000000000000000001",
-    "validity_end": 1762124400,
-    "validity_start": 1759984200,
-}
-
 _METER_ID = "1test000000001"
 
 _ORIGIN_EXTENDED = {
@@ -135,35 +115,26 @@ class TestBaseUrlNormalisation:
 # ---------------------------------------------------------------------------
 
 
-class TestDiscoverMeterId:
-    async def test_returns_first_sensor_domain(self):
+class TestDiscoverAllMeterIds:
+    async def test_returns_all_meter_ids(self):
         c = _make_client()
         c.httpx_client.get = AsyncMock(
-            side_effect=[
-                _make_response(_DERIVED_LIST),
-                _make_response(_DERIVED_CONTRACT),
-            ]
+            return_value=_make_response([_METER_ID, "1test000000002"])
         )
-        meter_id = await c._discover_meter_id()
-        assert meter_id == _METER_ID
+        meter_ids = await c.discover_all_meter_ids()
+        assert meter_ids == [_METER_ID, "1test000000002"]
 
-    async def test_returns_none_on_connection_error(self):
+    async def test_returns_empty_on_connection_error(self):
         c = _make_client()
         c.httpx_client.get = AsyncMock(side_effect=Exception("connection refused"))
-        meter_id = await c._discover_meter_id()
-        assert meter_id is None
+        meter_ids = await c.discover_all_meter_ids()
+        assert meter_ids == []
 
-    async def test_returns_none_when_no_sensor_domains(self):
-        contract_without_domains = {**_DERIVED_CONTRACT, "sensor_domains": []}
+    async def test_returns_empty_when_no_meters(self):
         c = _make_client()
-        c.httpx_client.get = AsyncMock(
-            side_effect=[
-                _make_response(_DERIVED_LIST),
-                _make_response(contract_without_domains),
-            ]
-        )
-        meter_id = await c._discover_meter_id()
-        assert meter_id is None
+        c.httpx_client.get = AsyncMock(return_value=_make_response([]))
+        meter_ids = await c.discover_all_meter_ids()
+        assert meter_ids == []
 
 
 # ---------------------------------------------------------------------------
@@ -176,8 +147,7 @@ class TestGetReadings:
         c = _make_client()
         c.httpx_client.get = AsyncMock(
             side_effect=[
-                _make_response(_DERIVED_LIST),
-                _make_response(_DERIVED_CONTRACT),
+                _make_response([_METER_ID]),
                 _make_response(_ORIGIN_EXTENDED),
             ]
         )
@@ -187,15 +157,12 @@ class TestGetReadings:
         assert "1-0:2.8.0" in readings
         assert "1-0:16.7.0" in readings
 
-    def test_import_value_converted_from_wh_to_kwh(self):
+    async def test_import_value_converted_from_wh_to_kwh(self):
         """value=12345678, scaler=-1, unit=30 → 12345678 * 0.1 / 1000 = 1234.5678"""
         c = _make_client()
         c.meter_id = _METER_ID
         c.httpx_client.get = AsyncMock(return_value=_make_response(_ORIGIN_EXTENDED))
-
-        import asyncio
-
-        readings = asyncio.get_event_loop().run_until_complete(c._get_readings())
+        readings = await c._get_readings()
         assert readings["1-0:1.8.0"].value == pytest.approx(1234.5678)
 
     async def test_skips_invalid_logical_name(self):
@@ -218,8 +185,7 @@ class TestGetReadings:
         c = _make_client()
         c.httpx_client.get = AsyncMock(
             side_effect=[
-                _make_response(_DERIVED_LIST),
-                _make_response(_DERIVED_CONTRACT),
+                _make_response([_METER_ID]),
                 _make_response(_ORIGIN_EXTENDED),
             ]
         )
