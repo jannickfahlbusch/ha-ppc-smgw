@@ -7,6 +7,7 @@ HomeAssistant component to read SMGWs.
 This custom integration allows you to integrate the following Smart Meter Gateways into HomeAssistant:
 * PPC SMGW
 * Theben Conexa
+* EMH Casa
 
 ## Installation
 
