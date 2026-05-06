@@ -31,11 +31,9 @@ class PPCSmgw:
 
         self._cookies = {}
         self._token = ""
+        self._auth = httpx.DigestAuth(username=self.username, password=self.password)
 
         self.firmware_version = None
-
-    def _get_auth(self):
-        return httpx.DigestAuth(username=self.username, password=self.password)
 
     def _post_data(self, action):
         return f"tkn={self._token}&action={action}"
@@ -63,7 +61,7 @@ class PPCSmgw:
             response = await self.httpx_client.get(
                 self.host,
                 timeout=10,
-                auth=self._get_auth(),
+                auth=self._auth,
             )
         except Exception as e:
             msg = f"Error connecting to {self.host}: {e}"
@@ -98,7 +96,7 @@ class PPCSmgw:
                 data=self._post_data("meterform"),
                 cookies=self._cookies,
                 timeout=10,
-                auth=self._get_auth(),
+                auth=self._auth,
             )
         except Exception as e:
             self.logger.error(f"Error getting meter readings: {e}")
@@ -121,7 +119,7 @@ class PPCSmgw:
                 data=post_data,
                 cookies=self._cookies,
                 timeout=10,
-                auth=self._get_auth(),
+                auth=self._auth,
             )
         except Exception as e:
             self.logger.error(f"Error getting meter profile: {e}")
@@ -195,7 +193,7 @@ class PPCSmgw:
                 data=self._post_data("logout"),
                 cookies=self._cookies,
                 timeout=10,
-                auth=self._get_auth(),
+                auth=self._auth,
             )
             self.logger.debug(f"Got response: {response}\nContent: {response.content}")
 
@@ -219,7 +217,7 @@ class PPCSmgw:
             data=self._post_data("selftest"),
             cookies=self._cookies,
             timeout=10,
-            auth=self._get_auth(),
+            auth=self._auth,
         )
 
         self.logger.debug(f"Got response: {response}\nContent: {response.content}")
