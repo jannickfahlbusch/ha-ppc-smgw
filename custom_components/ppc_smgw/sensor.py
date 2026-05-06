@@ -11,7 +11,7 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import LastUpdatedSensorDescription
-from .coordinator import SMGwDataUpdateCoordinator, ConfigEntry
+from .coordinator import ConfigEntry, SMGwDataUpdateCoordinator
 from .entity import SMGWEntity
 from .gateways.reading import Information
 from .obis import (

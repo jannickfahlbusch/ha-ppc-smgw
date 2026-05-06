@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 import httpx
 
-from ..const import DEFAULT_NAME, DEFAULT_MODEL, MANUFACTURER
 from custom_components.ppc_smgw.gateways.reading import Information, OBISCode, Reading
 from custom_components.ppc_smgw.obis import parse_obis
-from datetime import datetime, timezone
+
+from ..const import DEFAULT_MODEL, DEFAULT_NAME, MANUFACTURER
 
 
 class EMHCasaClient:

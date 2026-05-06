@@ -5,13 +5,13 @@ from datetime import datetime
 
 import httpx
 from bs4 import BeautifulSoup
+from homeassistant.util.dt import now
 
-from .errors import SessionCookieStillPresentError
-from ..const import DEFAULT_NAME, DEFAULT_MODEL, MANUFACTURER
-from custom_components.ppc_smgw.gateways.reading import Reading, Information, OBISCode
+from custom_components.ppc_smgw.gateways.reading import Information, OBISCode, Reading
 from custom_components.ppc_smgw.obis import parse_obis
 
-from homeassistant.util.dt import now
+from ..const import DEFAULT_MODEL, DEFAULT_NAME, MANUFACTURER
+from .errors import SessionCookieStillPresentError
 
 
 class PPCSmgw:
