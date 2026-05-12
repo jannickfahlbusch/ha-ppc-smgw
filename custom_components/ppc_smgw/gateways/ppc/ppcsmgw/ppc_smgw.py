@@ -34,14 +34,16 @@ class PPCSmgw:
 
         self.firmware_version = None
 
-    def _get_auth(self):
-        return httpx.DigestAuth(username=self.username, password=self.password)
-
     def _post_data(self, action):
         return f"tkn={self._token}&action={action}"
 
     async def _login(self):
         self.logger.info("Attempting to login to PPC SMGW")
+
+        # Fresh DigestAuth per poll cycle — the gateway's CGI architecture has no
+        # persistent nonce state, so reusing a stale nonce from 15 minutes ago fails.
+        # Within a single get_data() session the nonce is reused (login→posts→logout).
+        self._auth = httpx.DigestAuth(username=self.username, password=self.password)
 
         # Clear session state upfront so no stale credentials survive any failure path
         self._cookies = {}
@@ -63,7 +65,7 @@ class PPCSmgw:
             response = await self.httpx_client.get(
                 self.host,
                 timeout=10,
-                auth=self._get_auth(),
+                auth=self._auth,
             )
         except Exception as e:
             msg = f"Error connecting to {self.host}: {e}"
@@ -98,7 +100,7 @@ class PPCSmgw:
                 data=self._post_data("meterform"),
                 cookies=self._cookies,
                 timeout=10,
-                auth=self._get_auth(),
+                auth=self._auth,
             )
         except Exception as e:
             self.logger.error(f"Error getting meter readings: {e}")
@@ -121,7 +123,7 @@ class PPCSmgw:
                 data=post_data,
                 cookies=self._cookies,
                 timeout=10,
-                auth=self._get_auth(),
+                auth=self._auth,
             )
         except Exception as e:
             self.logger.error(f"Error getting meter profile: {e}")
@@ -195,7 +197,7 @@ class PPCSmgw:
                 data=self._post_data("logout"),
                 cookies=self._cookies,
                 timeout=10,
-                auth=self._get_auth(),
+                auth=self._auth,
             )
             self.logger.debug(f"Got response: {response}\nContent: {response.content}")
 
@@ -219,7 +221,7 @@ class PPCSmgw:
             data=self._post_data("selftest"),
             cookies=self._cookies,
             timeout=10,
-            auth=self._get_auth(),
+            auth=self._auth,
         )
 
         self.logger.debug(f"Got response: {response}\nContent: {response.content}")
