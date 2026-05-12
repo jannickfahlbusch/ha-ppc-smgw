@@ -31,7 +31,6 @@ class PPCSmgw:
 
         self._cookies = {}
         self._token = ""
-        self._auth = httpx.DigestAuth(username=self.username, password=self.password)
 
         self.firmware_version = None
 
@@ -40,6 +39,11 @@ class PPCSmgw:
 
     async def _login(self):
         self.logger.info("Attempting to login to PPC SMGW")
+
+        # Fresh DigestAuth per poll cycle — the gateway's CGI architecture has no
+        # persistent nonce state, so reusing a stale nonce from 15 minutes ago fails.
+        # Within a single get_data() session the nonce is reused (login→posts→logout).
+        self._auth = httpx.DigestAuth(username=self.username, password=self.password)
 
         # Clear session state upfront so no stale credentials survive any failure path
         self._cookies = {}
