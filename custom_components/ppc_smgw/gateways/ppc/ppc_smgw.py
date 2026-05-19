@@ -32,20 +32,31 @@ class PPC_SMGW(Gateway):
             logger=logger,
         )
 
-    async def get_data(self) -> Information:
+    async def get_data(self) -> Information | None:
+        """Fetch data from the gateway (stateless!)."""
         self.logger.info("Fetching data from Gateway")
 
-        if self.debug:
-            self.logger.debug("Debugging enabled, returning fake data")
+        try:
+            if self.debug:
+                self.logger.debug("Debugging enabled, returning fake data")
+                await asyncio.sleep(15)
+                return FakeInformation()
 
-            # It takes around 15 seconds for the GW to respond to all calls
-            # We should emulate this here to avoid timing issues
-            await asyncio.sleep(15)
-            self.data = FakeInformation
-        else:
-            self.data = await self.ppc_smgw_client.get_data()
+            raw_data = await self.ppc_smgw_client.get_data()
 
-        return self.data
+            if raw_data is None:
+                self.logger.warning("Gateway returned no data")
+                return None
+
+            # 🔥 FIX: Liste in Information umwandeln
+            if isinstance(raw_data, list):
+                return Information(raw_data)
+
+            return raw_data
+
+        except Exception as err:
+            self.logger.error(f"Error fetching data from gateway: {err}")
+            raise
 
     async def reboot(self):
         """Reboot the gateway."""

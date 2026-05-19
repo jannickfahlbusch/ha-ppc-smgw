@@ -12,6 +12,7 @@ from .gateways.reading import Information
 
 
 _LOGGER = logging.getLogger(__name__)
+SCAN_INTERVAL = timedelta(minutes=30)
 
 type ConfigEntry = ConfigEntry[Data]
 
@@ -22,10 +23,13 @@ class SMGwDataUpdateCoordinator(DataUpdateCoordinator[Information | None]):
     def __init__(
         self,
         hass: HomeAssistant,
-        update_interval: timedelta,
+        scan_interval: int,
     ) -> None:
         super().__init__(
-            hass=hass, logger=_LOGGER, name=DOMAIN, update_interval=update_interval
+            hass=hass,
+            logger=_LOGGER,
+            name=DOMAIN,
+            update_interval=timedelta(minutes=scan_interval),
         )
 
     async def _async_update_data(self) -> Information | None:

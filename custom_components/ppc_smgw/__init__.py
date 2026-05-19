@@ -16,7 +16,6 @@ from homeassistant.helpers.httpx_client import create_async_httpx_client
 from homeassistant.loader import async_get_loaded_integration
 
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, CONF_METER_TYPE
-from .gateways.emh.const import CONF_METER_ID as EMH_CONF_METER_ID
 from .coordinator import SMGwDataUpdateCoordinator, ConfigEntry, Data
 from custom_components.ppc_smgw.gateways.gateway import Gateway
 from custom_components.ppc_smgw.gateways.emh.emh import EMHGateway
@@ -38,15 +37,15 @@ async def async_setup_entry(
     entry: ConfigEntry,
 ) -> bool:
     """Set up this integration using UI."""
-    scan_interval = timedelta(
-        minutes=entry.options.get(
-            CONF_SCAN_INTERVAL,
-            entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
-        )
+
+    scan_interval = entry.options.get(
+        CONF_SCAN_INTERVAL,
+        entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
     )
+
     coordinator = SMGwDataUpdateCoordinator(
         hass=hass,
-        update_interval=scan_interval,
+        scan_interval=scan_interval,
     )
 
     development_mode = False
@@ -88,7 +87,6 @@ async def async_setup_entry(
                 websession=create_async_httpx_client(hass, verify_ssl=False),
                 logger=_LOGGER,
                 debug=development_mode,
-                meter_id=entry.data.get(EMH_CONF_METER_ID) or None,
             )
         case _:
             _LOGGER.error(
@@ -131,7 +129,8 @@ async def async_reload_entry(
     entry: ConfigEntry,
 ) -> None:
     """Reload config entry."""
-    await hass.config_entries.async_reload(entry.entry_id)
+    await async_unload_entry(hass, entry)
+    await async_setup_entry(hass, entry)
 
 
 async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry):
