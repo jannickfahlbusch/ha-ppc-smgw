@@ -1,4 +1,4 @@
 homeassistant>=2026.4.4
 
-ruff>=0.15.12
+ruff>=0.15.14
 beautifulsoup4>=4.14.3
