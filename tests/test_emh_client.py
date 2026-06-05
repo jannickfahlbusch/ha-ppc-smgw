@@ -192,3 +192,23 @@ class TestGetReadings:
         info = await c.get_data()
         assert info.name == "EMH SMGW"
         assert len(info.readings) == 3
+
+    async def test_nonzero_channel_byte_extracted(self):
+        """Verify that A and B bytes from hex logical_name are parsed (not hardcoded to 1-0)."""
+        meter_data = {
+            "values": [
+                {
+                    "logical_name": f"0101010800ff.{_METER_ID}.sm",
+                    "scaler": 0,
+                    "signature": "-",
+                    "unit": 30,
+                    "value": "1000000",
+                },
+            ]
+        }
+        c = _make_client()
+        c.meter_id = _METER_ID
+        c.httpx_client.get = AsyncMock(return_value=_make_response(meter_data))
+        readings = await c._get_readings()
+        # A=01, B=01 should produce 1-1:1.8.0
+        assert "1-1:1.8.0" in readings
