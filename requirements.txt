@@ -1,4 +1,4 @@
-homeassistant>=2026.4.4
+homeassistant>=2026.6.3
 
 ruff>=0.15.17
 beautifulsoup4>=4.14.3
