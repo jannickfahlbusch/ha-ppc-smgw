@@ -3,11 +3,10 @@ import logging
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import slugify
 
 from .const import DEFAULT_NAME
 from .coordinator import SMGwDataUpdateCoordinator
-from homeassistant.util import slugify
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,10 +25,11 @@ class SMGWEntity(CoordinatorEntity[SMGwDataUpdateCoordinator]):
         super().__init__(coordinator)
 
         self.entity_description = entity_description
-        self._coordinator = coordinator
 
         _LOGGER.debug(
-            f"Initializing {entity_description.key}. EntryID: {coordinator.config_entry.entry_id}"
+            "Initializing %s. EntryID: %s",
+            entity_description.key,
+            coordinator.config_entry.entry_id,
         )
 
         self._attr_device_info = DeviceInfo(
@@ -45,7 +45,6 @@ class SMGWEntity(CoordinatorEntity[SMGwDataUpdateCoordinator]):
             sw_version=self.get_firmware_version(),
         )
 
-        self._attr_translation_key = self.entity_description.key.lower()
         self._attr_has_entity_name = True
 
     def get_entity_id_template(self):
@@ -54,45 +53,33 @@ class SMGWEntity(CoordinatorEntity[SMGwDataUpdateCoordinator]):
         )
 
     def get_firmware_version(self) -> str:
-        firmware_version = "Unknown"
+        if self.coordinator.data is None:
+            return "Unknown"
         try:
-            firmware_version = self._coordinator.data.firmware_version
+            return self.coordinator.data.firmware_version
         except AttributeError:
-            _LOGGER.debug(
-                f"Firmware version not available. Data available: {self._coordinator.data}"
-            )
-
-        return firmware_version
+            return "Unknown"
 
     def get_manufacturer(self) -> str:
-        manufacturer = "Unknown"
+        if self.coordinator.data is None:
+            return "Unknown"
         try:
-            manufacturer = self._coordinator.data.manufacturer
+            return self.coordinator.data.manufacturer
         except AttributeError:
-            _LOGGER.debug(
-                f"Manufacturer data not available. Data available: {self._coordinator.data}"
-            )
-
-        return manufacturer
+            return "Unknown"
 
     def get_model(self) -> str:
-        model = "Unknown"
+        if self.coordinator.data is None:
+            return "Unknown"
         try:
-            model = self._coordinator.data.model
+            return self.coordinator.data.model
         except AttributeError:
-            _LOGGER.debug(
-                f"Model data not available. Data available: {self._coordinator.data}"
-            )
-
-        return model
+            return "Unknown"
 
     def get_name(self) -> str:
-        name = DEFAULT_NAME
+        if self.coordinator.data is None:
+            return DEFAULT_NAME
         try:
-            name = self._coordinator.data.name
+            return self.coordinator.data.name
         except AttributeError:
-            _LOGGER.debug(
-                f"Name not available, using default. Data available: {self._coordinator.data}"
-            )
-
-        return name
+            return DEFAULT_NAME
