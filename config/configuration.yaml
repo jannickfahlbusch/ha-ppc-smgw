@@ -7,3 +7,4 @@ logger:
   default: info
   logs:
     custom_components.ppc_smgw: debug
+    py_ppc_smgw: debug
