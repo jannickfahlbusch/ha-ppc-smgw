@@ -24,8 +24,10 @@ from homeassistant.helpers.selector import (
 
 from .const import (
     CONF_METER_TYPE,
+    CONF_USE_LIBRARY,
     DEFAULT_DEBUG,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_USE_LIBRARY,
     DOMAIN,
     REPO_URL,
 )
@@ -52,6 +54,8 @@ def build_username_password_schema(
     default_debug: bool = False,
     optional_password: bool = False,
     default_meter_id: str | None = None,
+    allow_use_library: bool = False,
+    default_use_library: bool = False,
 ) -> vol.Schema:
     """Build a schema for username/password configuration.
 
@@ -64,6 +68,8 @@ def build_username_password_schema(
         default_debug: Default value for the debug field (if allowed).
         optional_password: If True, password can be left blank (for options flow).
         default_meter_id: If not None, include an optional meter_id field (EMH only).
+        allow_use_library: Whether to include the library toggle (PPC options only).
+        default_use_library: Default value for the library toggle (if allowed).
 
     Returns:
         A voluptuous Schema for the configuration form.
@@ -88,6 +94,9 @@ def build_username_password_schema(
 
     if allow_debugging:
         schema[vol.Optional(CONF_DEBUG, default=default_debug)] = bool
+
+    if allow_use_library:
+        schema[vol.Optional(CONF_USE_LIBRARY, default=default_use_library)] = bool
 
     if default_meter_id is not None:
         schema[vol.Optional(emh_const.CONF_METER_ID, default=default_meter_id)] = str
@@ -378,8 +387,13 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
         Returns:
             A voluptuous Schema populated with current configuration values.
         """
-        # Determine vendor type and appropriate defaults
-        vendor = self.data.get(CONF_METER_TYPE)
+        # Determine vendor type and appropriate defaults. meter_type is stored
+        # as a plain string in entry.data, so coerce it to the Vendor enum before
+        # comparing (a bare string never equals a Vendor member).
+        try:
+            vendor = Vendor(self.data.get(CONF_METER_TYPE))
+        except ValueError:
+            vendor = Vendor.PPC
 
         # Get vendor-specific default name
         if vendor == Vendor.Theben:
@@ -409,9 +423,14 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
         # Determine if this is a PPC device (only vendor with debug option)
         is_ppc = vendor == Vendor.PPC
         current_debug = DEFAULT_DEBUG
+        current_use_library = DEFAULT_USE_LIBRARY
         if is_ppc:
             current_debug = self.options.get(
                 CONF_DEBUG, self.data.get(CONF_DEBUG, DEFAULT_DEBUG)
+            )
+            current_use_library = self.options.get(
+                CONF_USE_LIBRARY,
+                self.data.get(CONF_USE_LIBRARY, DEFAULT_USE_LIBRARY),
             )
 
         # For EMH, include the meter_id field
@@ -431,6 +450,8 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
             default_debug=current_debug,
             optional_password=True,
             default_meter_id=current_meter_id,
+            allow_use_library=is_ppc,
+            default_use_library=current_use_library,
         )
 
     def _update_options(self):

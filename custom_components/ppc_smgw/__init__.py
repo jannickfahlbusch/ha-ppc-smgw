@@ -15,7 +15,13 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.httpx_client import create_async_httpx_client
 from homeassistant.loader import async_get_loaded_integration
 
-from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, CONF_METER_TYPE
+from .const import (
+    CONF_METER_TYPE,
+    CONF_USE_LIBRARY,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_USE_LIBRARY,
+    DOMAIN,
+)
 from .gateways.emh.const import CONF_METER_ID as EMH_CONF_METER_ID
 from .coordinator import SMGwDataUpdateCoordinator, ConfigEntry, Data
 from custom_components.ppc_smgw.gateways.gateway import Gateway
@@ -61,6 +67,9 @@ async def async_setup_entry(
     match Vendor(entry.data[CONF_METER_TYPE]):
         case Vendor.PPC:
             _LOGGER.debug(f"Initializing PPC SMGW client")
+            # entry.data is the single source of truth (options are merged into
+            # data by the options flow), matching how CONF_DEBUG is read above.
+            use_library = entry.data.get(CONF_USE_LIBRARY, DEFAULT_USE_LIBRARY)
             client = PPC_SMGW(
                 host=entry.data[CONF_HOST],
                 username=entry.data[CONF_USERNAME],
@@ -68,6 +77,7 @@ async def async_setup_entry(
                 websession=create_async_httpx_client(hass, verify_ssl=False),
                 logger=_LOGGER,
                 debug=development_mode,
+                use_library=use_library,
             )
         case Vendor.Theben:
             _LOGGER.debug(f"Initializing Theben client")
