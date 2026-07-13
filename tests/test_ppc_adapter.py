@@ -120,6 +120,52 @@ class TestPPCAdapterDataPath:
         factory.client.get_meter_reading.assert_not_awaited()
 
 
+def _fw(*components) -> list[FirmwareVersion]:
+    """Build a FirmwareVersion list from (component, version) pairs."""
+    return [
+        FirmwareVersion(component=c, version=v, checksum="x") for c, v in components
+    ]
+
+
+class TestConstructFirmwareVersion:
+    """_construct_firmware_version joins two known components, tolerating gaps.
+
+    The firmware string is cosmetic (PPC exposes no changelog), so a missing
+    component must degrade the string rather than raise and break the poll.
+    """
+
+    @pytest.mark.parametrize(
+        ("firmware", "expected"),
+        [
+            (
+                _fw(("smgw-bootstream", "33918"), ("smgw-services", "34868")),
+                "33918-34868",
+            ),
+            (_fw(("smgw-bootstream", "33918")), "33918-"),  # services missing
+            (_fw(("smgw-services", "34868")), "-34868"),  # bootstream missing
+            (_fw(), "-"),  # nothing reported
+            (_fw(("smgw-other", "1")), "-"),  # only unrelated components
+        ],
+    )
+    def test_joins_and_tolerates_missing_components(self, firmware, expected):
+        assert PPC_SMGW._construct_firmware_version(firmware) == expected
+
+
+class TestAsAware:
+    """_as_aware only touches naive datetimes; None and aware pass through."""
+
+    def test_none_passes_through(self):
+        assert PPC_SMGW._as_aware(None) is None
+
+    def test_aware_datetime_is_returned_unchanged(self):
+        aware = datetime(2024, 12, 20, 16, 0, 1, tzinfo=timezone.utc)
+        assert PPC_SMGW._as_aware(aware) is aware
+
+    def test_naive_datetime_becomes_aware(self):
+        result = PPC_SMGW._as_aware(datetime(2024, 12, 20, 16, 0, 1))
+        assert result.tzinfo is not None
+
+
 @pytest.mark.asyncio
 class TestPPCAdapterReboot:
     """reboot() must target the right client based on use_library."""

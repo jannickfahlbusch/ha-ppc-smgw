@@ -427,3 +427,24 @@ class TestOptionsFlow:
 
         assert "use_library" in keys
         assert "debug" in keys
+
+    async def test_options_schema_falls_back_to_ppc_for_unknown_meter_type(
+        self, hass: HomeAssistant, ppc_config_data
+    ):
+        """An unrecognised meter_type must not blow up the options flow.
+
+        Old or corrupted entries may hold a value that is not a Vendor member;
+        the coercion falls back to PPC so the form still renders (with the
+        PPC-specific toggles) instead of raising ValueError.
+        """
+        data = {**ppc_config_data, CONF_METER_TYPE: "UNKNOWN"}
+        entry = create_mock_config_entry(data=data)
+        hass.config_entries._entries[entry.entry_id] = entry
+        options_flow = PPCSMGWLocalOptionsFlowHandler(entry)
+        options_flow.hass = hass
+
+        schema = options_flow._build_options_schema()
+        keys = {getattr(k, "schema", k) for k in schema.schema}
+
+        assert "use_library" in keys
+        assert "debug" in keys
