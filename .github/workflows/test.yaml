@@ -30,3 +30,46 @@ jobs:
 
         - name: "Run tests"
           run: python3 -m pytest tests/ -v --tb=short
+
+  installable:
+    # Verifies manifest.json requirements install cleanly on top of a real Home
+    # Assistant env. HA pins core deps to exact versions, so a too-high floor in
+    # an integration requirement is uninstallable at runtime (see py-ppc-smgw
+    # aa1e9bb: cryptography>=48 vs HA's ==46.0.5). Tests against the HA floor.
+    name: "manifest.json reqs installable on the targeted HA"
+    runs-on: "ubuntu-latest"
+    steps:
+        - name: "Checkout the repository"
+          uses: "actions/checkout@v7.0.0"
+
+        - name: "Install uv"
+          uses: "astral-sh/setup-uv@v6"
+
+        - name: "Set up Python"
+          run: uv python install 3.14
+
+        - name: "Resolve targeted Home Assistant version"
+          id: ha
+          run: |
+            spec="$(grep -iE '^homeassistant' requirements.txt \
+              | sed -E 's/^[Hh]omeassistant[[:space:]]*>=[[:space:]]*/homeassistant==/' \
+              | tr -d '[:space:]')"
+            echo "spec=${spec}" >> "$GITHUB_OUTPUT"
+            echo "Target HA spec: ${spec}"
+
+        - name: "Create environment"
+          run: uv venv --python 3.14
+
+        - name: "Install Home Assistant"
+          run: uv pip install "${{ steps.ha.outputs.spec }}"
+
+        - name: "Install integration manifest.json requirements on top"
+          run: |
+            mapfile -t reqs < <(jq -r '.requirements[]' custom_components/ppc_smgw/manifest.json)
+            echo "Installing: ${reqs[*]}"
+            uv pip install "${reqs[@]}"
+
+        - name: "Verify the environment is consistent"
+          # uv pip install exits 0 even when it silently upgrades an HA-pinned dep;
+          # pip check is what detects the resulting conflict and fails the job.
+          run: uv pip check
