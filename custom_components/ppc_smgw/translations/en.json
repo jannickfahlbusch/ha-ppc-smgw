@@ -40,10 +40,12 @@
             "password": "Password",
             "scan_interval": "Polling Interval in minutes",
             "debug": "Development mode - DO NOT USE (Uses fake data)",
+            "use_library": "Use py-ppc-smgw client library (experimental)",
             "meter_id": "Meter ID (EMH only — leave blank for auto-detect)"
           },
           "data_description": {
-            "password": "Leave blank to keep the current password"
+            "password": "Leave blank to keep the current password",
+            "use_library": "Leave off to keep the built-in client (default)."
           }
         }
       }

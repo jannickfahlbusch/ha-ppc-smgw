@@ -368,3 +368,83 @@ class TestOptionsFlow:
 
         assert result["type"] == FlowResultType.FORM
         assert result["errors"] == {CONF_HOST: "already_configured"}
+
+    async def test_options_flow_enables_use_library(
+        self, hass: HomeAssistant, ppc_config_data
+    ):
+        """Toggling use_library on persists it to entry.data."""
+        entry = create_mock_config_entry(data=ppc_config_data)
+        hass.config_entries._entries[entry.entry_id] = entry
+        options_flow = PPCSMGWLocalOptionsFlowHandler(entry)
+        options_flow.hass = hass
+
+        result = await options_flow.async_step_user(
+            user_input={
+                k: ppc_config_data[k] for k in ["name", "host", "username", "password"]
+            }
+            | {"scan_interval": 5, "debug": False, "use_library": True}
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert entry.data["use_library"] is True
+
+    async def test_options_flow_use_library_defaults_false_when_absent(
+        self, hass: HomeAssistant, ppc_config_data
+    ):
+        """Omitting use_library leaves the built-in client (default) active."""
+        entry = create_mock_config_entry(data=ppc_config_data)
+        hass.config_entries._entries[entry.entry_id] = entry
+        options_flow = PPCSMGWLocalOptionsFlowHandler(entry)
+        options_flow.hass = hass
+
+        result = await options_flow.async_step_user(
+            user_input={
+                k: ppc_config_data[k] for k in ["name", "host", "username", "password"]
+            }
+            | {"scan_interval": 5, "debug": False}
+        )
+
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        assert entry.data.get("use_library", False) is False
+
+    async def test_options_schema_shows_ppc_toggles_for_string_meter_type(
+        self, hass: HomeAssistant, ppc_config_data
+    ):
+        """meter_type is stored as a string; the PPC toggles must still appear.
+
+        Regression: entry.data["meter_type"] is the raw string "PPC", not the
+        Vendor enum, so the options schema must coerce it before deciding
+        is_ppc — otherwise both the debug and use_library toggles vanish.
+        """
+        data = {**ppc_config_data, CONF_METER_TYPE: "PPC"}
+        entry = create_mock_config_entry(data=data)
+        hass.config_entries._entries[entry.entry_id] = entry
+        options_flow = PPCSMGWLocalOptionsFlowHandler(entry)
+        options_flow.hass = hass
+
+        schema = options_flow._build_options_schema()
+        keys = {getattr(k, "schema", k) for k in schema.schema}
+
+        assert "use_library" in keys
+        assert "debug" in keys
+
+    async def test_options_schema_falls_back_to_ppc_for_unknown_meter_type(
+        self, hass: HomeAssistant, ppc_config_data
+    ):
+        """An unrecognised meter_type must not blow up the options flow.
+
+        Old or corrupted entries may hold a value that is not a Vendor member;
+        the coercion falls back to PPC so the form still renders (with the
+        PPC-specific toggles) instead of raising ValueError.
+        """
+        data = {**ppc_config_data, CONF_METER_TYPE: "UNKNOWN"}
+        entry = create_mock_config_entry(data=data)
+        hass.config_entries._entries[entry.entry_id] = entry
+        options_flow = PPCSMGWLocalOptionsFlowHandler(entry)
+        options_flow.hass = hass
+
+        schema = options_flow._build_options_schema()
+        keys = {getattr(k, "schema", k) for k in schema.schema}
+
+        assert "use_library" in keys
+        assert "debug" in keys

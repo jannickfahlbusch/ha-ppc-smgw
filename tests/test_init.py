@@ -110,6 +110,67 @@ class TestInit:
             # Verify the error message contains the host
             assert ppc_config_data["host"] in str(exc_info.value)
 
+    async def test_setup_entry_passes_use_library_when_enabled(
+        self, hass: HomeAssistant, ppc_config_data, mock_gateway
+    ):
+        """use_library from entry.data must be forwarded to PPC_SMGW."""
+        from custom_components.ppc_smgw.const import CONF_USE_LIBRARY
+
+        config_data = {**ppc_config_data, CONF_USE_LIBRARY: True}
+        entry = create_mock_config_entry(data=config_data)
+
+        mock_integration = MagicMock()
+        mock_integration.domain = DOMAIN
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        ppc_cls = MagicMock(return_value=mock_gateway)
+
+        with (
+            patch("custom_components.ppc_smgw.PPC_SMGW", ppc_cls),
+            patch("custom_components.ppc_smgw.create_async_httpx_client"),
+            patch(
+                "custom_components.ppc_smgw.async_get_loaded_integration",
+                return_value=mock_integration,
+            ),
+            patch.object(hass.config_entries, "async_forward_entry_setups"),
+            patch(
+                "custom_components.ppc_smgw.SMGwDataUpdateCoordinator",
+                return_value=mock_coordinator,
+            ),
+        ):
+            await async_setup_entry(hass, entry)
+
+        assert ppc_cls.call_args.kwargs["use_library"] is True
+
+    async def test_setup_entry_defaults_use_library_false(
+        self, hass: HomeAssistant, ppc_config_data, mock_gateway
+    ):
+        """Without the key in entry.data, PPC_SMGW must get use_library=False."""
+        entry = create_mock_config_entry(data=ppc_config_data)
+
+        mock_integration = MagicMock()
+        mock_integration.domain = DOMAIN
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        ppc_cls = MagicMock(return_value=mock_gateway)
+
+        with (
+            patch("custom_components.ppc_smgw.PPC_SMGW", ppc_cls),
+            patch("custom_components.ppc_smgw.create_async_httpx_client"),
+            patch(
+                "custom_components.ppc_smgw.async_get_loaded_integration",
+                return_value=mock_integration,
+            ),
+            patch.object(hass.config_entries, "async_forward_entry_setups"),
+            patch(
+                "custom_components.ppc_smgw.SMGwDataUpdateCoordinator",
+                return_value=mock_coordinator,
+            ),
+        ):
+            await async_setup_entry(hass, entry)
+
+        assert ppc_cls.call_args.kwargs["use_library"] is False
+
     async def test_setup_entry_uses_configured_scan_interval(
         self, hass: HomeAssistant, mock_gateway
     ):

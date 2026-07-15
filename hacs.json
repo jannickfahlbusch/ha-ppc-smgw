@@ -1,5 +1,6 @@
 {
-    "name": "PPC SMGW",
-    "content_in_root": false,
-    "render_readme": true
-  }
+  "name": "PPC SMGW",
+  "homeassistant": "2026.3.0",
+  "content_in_root": false,
+  "render_readme": true
+}

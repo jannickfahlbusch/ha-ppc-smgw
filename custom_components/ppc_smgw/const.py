@@ -17,6 +17,12 @@ REPO_URL = "https://github.com/jannickfahlbusch/ha-ppc-smgw"
 
 CONF_METER_TYPE = "meter_type"
 
+# Opt-in toggle (PPC options flow only) to route data fetching through the
+# standalone py-ppc-smgw library instead of the built-in client. Default keeps
+# the built-in client so existing installations are unaffected.
+CONF_USE_LIBRARY = "use_library"
+DEFAULT_USE_LIBRARY = False
+
 SENSOR_TYPES = [
     SensorEntityDescription(
         key="1-0:1.8.0",

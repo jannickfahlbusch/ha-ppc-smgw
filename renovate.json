@@ -2,5 +2,15 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "homeassistant": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "description": "Group py-ppc-smgw bumps across manifest.json and requirements.txt into one PR",
+      "matchPackageNames": ["py-ppc-smgw"],
+      "groupName": "py-ppc-smgw"
+    }
   ]
 }
