@@ -36,7 +36,7 @@ jobs:
     # Assistant env. HA pins core deps to exact versions, so a too-high floor in
     # an integration requirement is uninstallable at runtime (see py-ppc-smgw
     # aa1e9bb: cryptography>=48 vs HA's ==46.0.5). Tests against the HA floor.
-    name: "manifest.json reqs installable on the targeted HA"
+    name: "manifest.json requirements installable on the targeted HA"
     runs-on: "ubuntu-latest"
     steps:
         - name: "Checkout the repository"
