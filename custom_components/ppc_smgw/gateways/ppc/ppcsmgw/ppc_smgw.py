@@ -73,7 +73,11 @@ class PPCSmgw:
             raise ConnectionError(msg) from e
 
         if "session" not in response.cookies:
-            msg = f"Login to {self.host} failed: no session cookie in response (HTTP {response.status_code})"
+            msg = (
+                f"Login to {self.host} failed: no session cookie in response (HTTP {response.status_code}). "
+                f"Please have a look at the section 'Troubleshooting' in"
+                f"https://github.com/jannickfahlbusch/ha-ppc-smgw"
+            )
             self.logger.error(msg)
             raise ConnectionError(msg)
         self._cookies = {"Cookie": response.cookies["session"]}
