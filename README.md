@@ -38,3 +38,7 @@ In order to connect to your Gateway, you need at least the following information
 
 Please note that most providers have configured the SMGW to update the values only every 15 to 20 minutes.
 You should choose an interval that is reasonably large as polling too frequently might lead to a lockdown of the SMGW after a yet to be clarified amount of polls.
+
+## Troubleshooting
+
+* Setup fails with "no session cookie in response (HTTP 200)" - if your SMGW was installed by 'Energy Metering Germany GmbH' for Octopus Energy please contact them. They have to reconfigure the SMGW.
