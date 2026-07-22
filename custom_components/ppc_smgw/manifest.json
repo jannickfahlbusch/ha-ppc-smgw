@@ -13,5 +13,5 @@
     "beautifulsoup4>=4.13.3",
     "py-ppc-smgw==0.1.3"
   ],
-  "version": "0.0.22"
+  "version": "0.0.23"
 }
