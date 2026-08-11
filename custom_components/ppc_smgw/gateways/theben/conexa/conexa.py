@@ -24,8 +24,7 @@ class ThebenConexaClient:
         self.httpx_client.headers.setdefault("Content-Type", "application/json")
         self.httpx_client.follow_redirects = True
 
-    def _get_auth(self) -> httpx.DigestAuth:
-        return httpx.DigestAuth(self.username, self.password)
+        self._auth: httpx.DigestAuth = httpx.DigestAuth(self.username, self.password)
 
     async def get_data(self) -> Information:
         information = Information(
@@ -48,7 +47,7 @@ class ThebenConexaClient:
         try:
             response = await self.httpx_client.post(
                 self.base_url,
-                auth=self._get_auth(),
+                auth=self._auth,
                 timeout=10,
                 json={"method": "user-info"},
             )
@@ -97,7 +96,7 @@ class ThebenConexaClient:
             try:
                 response = await self.httpx_client.post(
                     self.base_url,
-                    auth=self._get_auth(),
+                    auth=self._auth,
                     timeout=10,
                     json={
                         "method": "readings",
@@ -147,7 +146,7 @@ class ThebenConexaClient:
         try:
             response = await self.httpx_client.post(
                 self.base_url,
-                auth=self._get_auth(),
+                auth=self._auth,
                 timeout=10,
                 # TODO: Requires setting the header "X-Content-Length" manually (equals body length)
                 json={"method": "smgw-info"},
