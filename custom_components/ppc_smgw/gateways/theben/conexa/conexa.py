@@ -1,8 +1,11 @@
+import logging
 import httpx
 
 from ..const import DEFAULT_NAME, DEFAULT_MODEL, MANUFACTURER
 from custom_components.ppc_smgw.gateways.reading import Information, OBISCode, Reading
 from datetime import datetime, timezone
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class ThebenMD5DigestAuth(httpx.DigestAuth):
@@ -12,6 +15,10 @@ class ThebenMD5DigestAuth(httpx.DigestAuth):
         self, request: httpx.Request, response: httpx.Response, auth_header: str
     ):
         challenge = super()._parse_challenge(request, response, auth_header)
+        _LOGGER.debug(
+            "Conexa Digest challenge received with algorithm='%s', forcing algorithm='MD5'",
+            getattr(challenge, "algorithm", "unknown"),
+        )
         return challenge._replace(algorithm="MD5")
 
 
