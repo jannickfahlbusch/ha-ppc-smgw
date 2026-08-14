@@ -5,6 +5,16 @@ from custom_components.ppc_smgw.gateways.reading import Information, OBISCode, R
 from datetime import datetime, timezone
 
 
+class ThebenMD5DigestAuth(httpx.DigestAuth):
+    """DigestAuth wrapper forcing MD5 algorithm to bypass Theben Conexa firmware SHA-256 issue."""
+
+    def _parse_challenge(
+        self, request: httpx.Request, response: httpx.Response, auth_header: str
+    ):
+        challenge = super()._parse_challenge(request, response, auth_header)
+        return challenge._replace(algorithm="MD5")
+
+
 class ThebenConexaClient:
     def __init__(
         self,
@@ -25,7 +35,7 @@ class ThebenConexaClient:
         self.httpx_client.follow_redirects = True
 
     def _get_auth(self) -> httpx.DigestAuth:
-        return httpx.DigestAuth(self.username, self.password)
+        return ThebenMD5DigestAuth(self.username, self.password)
 
     async def get_data(self) -> Information:
         information = Information(
