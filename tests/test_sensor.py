@@ -1,19 +1,22 @@
 """Tests for the PPC SMGW sensor platform."""
 
 import pytest
+from dataclasses import replace
 from datetime import datetime
 from unittest.mock import MagicMock
 from homeassistant.components.sensor import SensorEntityDescription
 from homeassistant.core import HomeAssistant
 
 from custom_components.ppc_smgw.sensor import (
-    OBISSensor,
+    FirmwareSensor,
     LastUpdatedSensor,
+    OBISSensor,
     async_setup_entry,
 )
 from custom_components.ppc_smgw.const import (
-    SENSOR_TYPES,
+    FirmwareVersionSensorDescription,
     LastUpdatedSensorDescription,
+    SENSOR_TYPES,
 )
 from custom_components.ppc_smgw.gateways.reading import Information, Reading
 from custom_components.ppc_smgw.coordinator import Data
@@ -73,8 +76,8 @@ class TestSensorPlatformSetup:
 
         await async_setup_entry(hass, entry, mock_add_entities)
 
-        # Should create len(SENSOR_TYPES) + 1 (LastUpdatedSensor)
-        expected_count = len(SENSOR_TYPES) + 1
+        # Should create len(SENSOR_TYPES) + 1 (LastUpdatedSensor) + 1 (FirmwareSensor)
+        expected_count = len(SENSOR_TYPES) + 2
         mock_add_entities.assert_called_once()
 
         # Get the entities list that was passed
@@ -86,9 +89,11 @@ class TestSensorPlatformSetup:
         last_update_sensors = [
             e for e in entities_list if isinstance(e, LastUpdatedSensor)
         ]
+        firmware_sensors = [e for e in entities_list if isinstance(e, FirmwareSensor)]
 
         assert len(obis_sensors) == len(SENSOR_TYPES)
         assert len(last_update_sensors) == 1
+        assert len(firmware_sensors) == 1
 
     async def test_async_setup_entry_uses_coordinator(
         self, hass: HomeAssistant, ppc_config_data
@@ -193,3 +198,39 @@ class TestLastUpdatedSensor:
         )
 
         assert sensor.native_value == valid_information.last_update
+
+
+class TestFirmwareSensor:
+    """Test the FirmwareSensor class."""
+
+    @pytest.mark.parametrize(
+        ("poll_sequence", "expected"),
+        [
+            # (firmware value per poll; None means data is not an Information object)
+            pytest.param([None], None, id="invalid_and_uncached"),
+            pytest.param(["1.0.0"], "1.0.0", id="valid_data"),
+            pytest.param(["1.0.0", "Unknown"], "1.0.0", id="caches_across_unknown"),
+            pytest.param(["Unknown"], None, id="only_unknown_received"),
+            pytest.param(["1.0.0", None], "1.0.0", id="caches_across_invalid"),
+        ],
+    )
+    def test_native_value(
+        self, mock_coordinator, valid_information, poll_sequence, expected
+    ):
+
+        sensor = FirmwareSensor(
+            coordinator=mock_coordinator,
+            entity_description=FirmwareVersionSensorDescription,
+        )
+
+        result = None
+        for firmware in poll_sequence:
+            if firmware is None:
+                mock_coordinator.data = None
+            else:
+                mock_coordinator.data = replace(
+                    valid_information, firmware_version=firmware
+                )
+            result = sensor.native_value
+
+        assert result == expected
