@@ -4,7 +4,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import UnitOfEnergy
+from homeassistant.const import EntityCategory, UnitOfEnergy
 
 DOMAIN = "ppc_smgw"
 DEFAULT_NAME = "SMGW"
@@ -51,6 +51,14 @@ LastUpdatedSensorDescription = SensorEntityDescription(
     icon="mdi:clock-time-eight",
     native_unit_of_measurement=None,
     device_class=SensorDeviceClass.TIMESTAMP,
+)
+
+FirmwareVersionSensorDescription = SensorEntityDescription(
+    key="firmware_version",
+    name="Firmware Version",
+    icon="mdi:chip",
+    entity_category=EntityCategory.DIAGNOSTIC,
+    entity_registry_enabled_default=True,
 )
 
 RestartGatewayButtonDescription = ButtonEntityDescription(

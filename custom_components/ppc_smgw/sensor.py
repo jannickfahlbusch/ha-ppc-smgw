@@ -5,10 +5,15 @@ from homeassistant.components.sensor import SensorEntity, SensorEntityDescriptio
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import SENSOR_TYPES, LastUpdatedSensorDescription
-from .coordinator import SMGwDataUpdateCoordinator, ConfigEntry
-from .entity import SMGWEntity
 from custom_components.ppc_smgw.gateways.reading import Information
+
+from .const import (
+    SENSOR_TYPES,
+    FirmwareVersionSensorDescription,
+    LastUpdatedSensorDescription,
+)
+from .coordinator import ConfigEntry, SMGwDataUpdateCoordinator
+from .entity import SMGWEntity
 
 _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = 0
@@ -33,6 +38,13 @@ async def async_setup_entry(
         LastUpdatedSensor(
             coordinator=entry.runtime_data.coordinator,
             entity_description=LastUpdatedSensorDescription,
+        )
+    )
+
+    entities.append(
+        FirmwareSensor(
+            coordinator=entry.runtime_data.coordinator,
+            entity_description=FirmwareVersionSensorDescription,
         )
     )
 
@@ -94,3 +106,33 @@ class LastUpdatedSensor(SMGWEntity, SensorEntity):
             return None
 
         return data.last_update
+
+
+class FirmwareSensor(SMGWEntity, SensorEntity):
+    """Sensor for the gateway firmware version."""
+
+    def __init__(
+        self,
+        coordinator: SMGwDataUpdateCoordinator,
+        entity_description: SensorEntityDescription,
+    ) -> None:
+        """Initialize the sensor class."""
+        super().__init__(coordinator, entity_description)
+        self.entity_description = entity_description
+
+        self._attr_unique_id = f"sensor.{self.get_entity_id_template()}"
+        self.entity_id = self._attr_unique_id
+        self._cached_firmware_version: str | None = None
+
+    @property
+    def native_value(self) -> str | None:
+        """Return the firmware version."""
+        data = self.coordinator.data
+
+        if not isinstance(data, Information):
+            return self._cached_firmware_version
+
+        if data.firmware_version and data.firmware_version != "Unknown":
+            self._cached_firmware_version = data.firmware_version
+
+        return self._cached_firmware_version
