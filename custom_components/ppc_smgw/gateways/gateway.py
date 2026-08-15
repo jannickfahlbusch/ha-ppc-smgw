@@ -21,6 +21,7 @@ class Gateway:
         self.websession = websession
         self.logger = logger
         self.debug = debug
+        self.dynamic_obis_discovery_enabled = False
         self.data: Information
 
     async def check_connection(self) -> bool:

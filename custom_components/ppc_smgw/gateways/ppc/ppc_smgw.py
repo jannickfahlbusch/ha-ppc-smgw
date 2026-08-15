@@ -43,6 +43,7 @@ class PPC_SMGW(Gateway):
         # Feature toggle flag: route through the py-ppc-smgw library instead of the
         # built-in client. Default uses the py-ppc-smgw library.
         self.use_library = use_library
+        self.dynamic_obis_discovery_enabled = use_library
 
         self.ppc_smgw_client = PPCSmgw(
             host=host,
@@ -89,15 +90,24 @@ class PPC_SMGW(Gateway):
             last_ts: datetime | None = None
 
             meters: list[Meter] = await client.get_meters()
+            self.logger.debug(
+                "Using py-ppc-smgw data path; discovered %d meter(s)", len(meters)
+            )
             if meters:
                 meter_readings = await client.get_meter_reading(meters[0])
                 for obis, reading in meter_readings.items():
                     ts = self._as_aware(reading.timestamp)
                     readings[obis] = Reading(
-                        value=reading.value, timestamp=ts, obis=obis
+                        value=self._coerce_reading_value(reading.value),
+                        timestamp=ts,
+                        obis=obis,
                     )
                     if ts is not None and (last_ts is None or ts > last_ts):
                         last_ts = ts
+                self.logger.debug(
+                    "Mapped %d py-ppc-smgw reading(s) to Information",
+                    len(readings),
+                )
 
             firmware = self._construct_firmware_version(
                 await client.get_firmware_versions()
@@ -122,6 +132,14 @@ class PPC_SMGW(Gateway):
         if dt is None:
             return None
         return dt.replace(tzinfo=now().tzinfo) if dt.tzinfo is None else dt
+
+    @staticmethod
+    def _coerce_reading_value(value: str | float) -> str | float:
+        """Return numeric gateway values as numbers when possible."""
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return value
 
     @staticmethod
     def _construct_firmware_version(firmware_versions: list[FirmwareVersion]) -> str:

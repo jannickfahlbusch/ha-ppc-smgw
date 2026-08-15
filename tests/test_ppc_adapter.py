@@ -50,6 +50,32 @@ def _library_client_mock(meters=None, readings=None, firmware=None) -> MagicMock
 class TestPPCAdapterDataPath:
     """get_data() must pick the right client based on use_library."""
 
+    async def test_builtin_path_keeps_dynamic_discovery_disabled(self):
+        """use_library=False keeps the static sensor rollout path."""
+        adapter = _make_adapter(use_library=False)
+
+        assert adapter.dynamic_obis_discovery_enabled is False
+
+    async def test_library_path_enables_dynamic_discovery(self):
+        """use_library=True is the only rollout gate for dynamic discovery."""
+        adapter = _make_adapter(use_library=True)
+
+        assert adapter.dynamic_obis_discovery_enabled is True
+
+    async def test_debug_does_not_disable_library_dynamic_discovery(self):
+        """Debug fake-data mode still uses the use_library rollout flag."""
+        adapter = PPC_SMGW(
+            host="https://192.168.1.200/cgi-bin/hanservice.cgi",
+            username="testuser",
+            password="testpass",
+            websession=MagicMock(),
+            logger=logging.getLogger("test.ppc_adapter"),
+            debug=True,
+            use_library=True,
+        )
+
+        assert adapter.dynamic_obis_discovery_enabled is True
+
     async def test_builtin_path_returns_client_data_untouched(self):
         """use_library=False delegates to the built-in client, unchanged."""
         adapter = _make_adapter(use_library=False)
@@ -69,8 +95,8 @@ class TestPPCAdapterDataPath:
         assert result is canned
         lib_cls.assert_not_called()
 
-    async def test_library_path_maps_readings_and_firmware(self):
-        """use_library=True reads first meter, maps readings, joins firmware."""
+    async def test_library_path_maps_canonical_readings_and_firmware(self):
+        """use_library=True maps library readings to canonical Information data."""
         adapter = _make_adapter(use_library=True)
 
         naive = datetime(2024, 12, 20, 16, 0, 1)  # tz-naive on purpose
@@ -102,8 +128,11 @@ class TestPPCAdapterDataPath:
         assert result.firmware_version == "33918-34868"
         # Readings mapped to the integration's own Reading type, tz-aware.
         assert isinstance(result.readings[OBIS(1, 0, 1, 8, 0)], Reading)
+        assert result.readings[OBIS(1, 0, 1, 8, 0)].value == 724.9204
         assert result.readings[OBIS(1, 0, 1, 8, 0)].timestamp.tzinfo is not None
         assert result.readings[OBIS(1, 0, 1, 8, 0)].obis == OBIS(1, 0, 1, 8, 0)
+        assert result.readings[OBIS(1, 0, 2, 8, 0)].value == 3.0557
+        assert result.readings[OBIS(1, 0, 2, 8, 0)].obis == OBIS(1, 0, 2, 8, 0)
         assert all(isinstance(k, OBIS) for k in result.readings)
         # last_update is the newest reading timestamp.
         assert result.last_update == adapter._as_aware(naive)
