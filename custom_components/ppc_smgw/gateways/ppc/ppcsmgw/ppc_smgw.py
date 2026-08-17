@@ -167,8 +167,7 @@ class PPCSmgw:
                     ).replace(tzinfo=now().tzinfo)
                     timestamp = current_timestamp
 
-                obis_str = row.find(id="table_metervalues_col_obis").string
-                obis_obj = OBIS.parse(obis_str.strip()) if obis_str else None
+                obis_obj = OBIS.parse(row.find(id="table_metervalues_col_obis").string)
                 if obis_obj is not None:
                     readings[obis_obj] = Reading(
                         value=row.find(id="table_metervalues_col_wert").string,
