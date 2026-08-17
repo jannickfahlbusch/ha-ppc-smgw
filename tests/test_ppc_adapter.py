@@ -13,6 +13,7 @@ from custom_components.ppc_smgw.gateways.ppc.const import (
 )
 from custom_components.ppc_smgw.gateways.reading import Information, Reading
 
+from obis_parser import OBIS
 from py_ppc_smgw.types import FirmwareVersion, Meter, Reading as LibReading
 
 _ADAPTER = "custom_components.ppc_smgw.gateways.ppc.ppc_smgw"
@@ -76,10 +77,12 @@ class TestPPCAdapterDataPath:
         naive = datetime(2024, 12, 20, 16, 0, 1)  # tz-naive on purpose
         older = datetime(2024, 12, 20, 15, 0, 0)
         readings = {
-            "1-0:1.8.0": LibReading(
-                value="724.9204", timestamp=naive, obis="1-0:1.8.0"
+            OBIS(1, 0, 1, 8, 0): LibReading(
+                value="724.9204", timestamp=naive, obis=OBIS(1, 0, 1, 8, 0)
             ),
-            "1-0:2.8.0": LibReading(value="3.0557", timestamp=older, obis="1-0:2.8.0"),
+            OBIS(1, 0, 2, 8, 0): LibReading(
+                value="3.0557", timestamp=older, obis=OBIS(1, 0, 2, 8, 0)
+            ),
         }
         firmware = [
             FirmwareVersion(component="smgw-bootstream", version="33918", checksum="x"),

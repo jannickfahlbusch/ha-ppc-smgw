@@ -11,6 +11,7 @@
   "issue_tracker": "https://github.com/jannickfahlbusch/ha-ppc-smgw/issues",
   "requirements": [
     "beautifulsoup4>=4.13.3",
+    "obis-parser==0.0.1",
     "py-ppc-smgw==0.2.0"
   ],
   "version": "0.0.24"
