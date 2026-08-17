@@ -2,4 +2,5 @@ homeassistant>=2026.3.0
 
 ruff>=0.15.21
 beautifulsoup4>=4.14.3
-py-ppc-smgw==0.1.3
+obis-parser==0.0.1
+py-ppc-smgw==0.2.0

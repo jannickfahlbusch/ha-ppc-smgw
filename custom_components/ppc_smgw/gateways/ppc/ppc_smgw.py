@@ -89,8 +89,8 @@ class PPC_SMGW(Gateway):
                 meter_readings = await client.get_meter_reading(meters[0])
                 for obis, reading in meter_readings.items():
                     ts = self._as_aware(reading.timestamp)
-                    readings[obis] = Reading(
-                        value=reading.value, timestamp=ts, obis=obis
+                    readings[obis.canonical] = Reading(
+                        value=reading.value, timestamp=ts, obis=obis.canonical
                     )
                     if ts is not None and (last_ts is None or ts > last_ts):
                         last_ts = ts
