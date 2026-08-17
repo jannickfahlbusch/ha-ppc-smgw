@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
+from obis_parser import OBIS
 
 from custom_components.ppc_smgw.gateways.emh.emhcasa.emh_client import EMHCasaClient
 
@@ -153,9 +154,9 @@ class TestGetReadings:
         )
         readings = await c._get_readings()
 
-        assert "1-0:1.8.0" in readings
-        assert "1-0:2.8.0" in readings
-        assert "1-0:16.7.0" in readings
+        assert OBIS(1, 0, 1, 8, 0, 255) in readings
+        assert OBIS(1, 0, 2, 8, 0, 255) in readings
+        assert OBIS(1, 0, 16, 7, 0, 255) in readings
 
     async def test_import_value_converted_from_wh_to_kwh(self):
         """value=12345678, scaler=-1, unit=30 → 12345678 * 0.1 / 1000 = 1234.5678"""
@@ -163,7 +164,7 @@ class TestGetReadings:
         c.meter_id = _METER_ID
         c.httpx_client.get = AsyncMock(return_value=_make_response(_ORIGIN_EXTENDED))
         readings = await c._get_readings()
-        assert readings["1-0:1.8.0"].value == pytest.approx(1234.5678)
+        assert readings[OBIS(1, 0, 1, 8, 0, 255)].value == pytest.approx(1234.5678)
 
     async def test_skips_invalid_logical_name(self):
         c = _make_client()
@@ -171,7 +172,7 @@ class TestGetReadings:
         c.httpx_client.get = AsyncMock(return_value=_make_response(_ORIGIN_EXTENDED))
         readings = await c._get_readings()
         # "short" entry must be dropped
-        assert all(len(k) > 5 for k in readings)
+        assert all(isinstance(k, OBIS) for k in readings)
         assert len(readings) == 3
 
     async def test_returns_empty_on_http_error(self):

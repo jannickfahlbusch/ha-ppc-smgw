@@ -22,6 +22,7 @@ from custom_components.ppc_smgw.sensor import (
     OBISSensor,
     async_setup_entry,
 )
+from obis_parser import OBIS
 from tests.conftest import create_mock_config_entry
 
 
@@ -43,15 +44,15 @@ def valid_information():
         firmware_version="1.0.0",
         last_update=datetime(2024, 1, 1, 12, 0, 0, tzinfo=pytz.UTC),
         readings={
-            "1-0:1.8.0*255": Reading(
+            OBIS(1, 0, 1, 8, 0): Reading(
                 value="1234.5",
                 timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=pytz.UTC),
-                obis="1-0:1.8.0*255",
+                obis=OBIS(1, 0, 1, 8, 0),
             ),
-            "1-0:2.8.0*255": Reading(
+            OBIS(1, 0, 2, 8, 0): Reading(
                 value="567.8",
                 timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=pytz.UTC),
-                obis="1-0:2.8.0*255",
+                obis=OBIS(1, 0, 2, 8, 0),
             ),
         },
     )
@@ -145,7 +146,7 @@ class TestOBISSensor:
         mock_coordinator.data = valid_information
 
         entity_description = SensorEntityDescription(
-            key="1-0:1.8.0*255",
+            key="1-0:1.8.0",
             name="Test Energy",
         )
 

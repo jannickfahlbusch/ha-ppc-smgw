@@ -4,6 +4,7 @@ import logging
 
 from homeassistant.util.dt import now
 import httpx
+from obis_parser import OBIS
 from py_ppc_smgw import PPCSMGWClient
 from py_ppc_smgw.types import FirmwareVersion, Meter
 import urllib3
@@ -81,7 +82,7 @@ class PPC_SMGW(Gateway):
             httpx_client=self.websession,
             logger=self.logger,
         ) as client:
-            readings: dict[str, Reading] = {}
+            readings: dict[OBIS, Reading] = {}
             last_ts: datetime | None = None
 
             meters: list[Meter] = await client.get_meters()
@@ -89,8 +90,8 @@ class PPC_SMGW(Gateway):
                 meter_readings = await client.get_meter_reading(meters[0])
                 for obis, reading in meter_readings.items():
                     ts = self._as_aware(reading.timestamp)
-                    readings[obis.canonical] = Reading(
-                        value=reading.value, timestamp=ts, obis=obis.canonical
+                    readings[obis] = Reading(
+                        value=reading.value, timestamp=ts, obis=obis
                     )
                     if ts is not None and (last_ts is None or ts > last_ts):
                         last_ts = ts

@@ -3,8 +3,9 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import httpx
+from obis_parser import OBIS
 
-from custom_components.ppc_smgw.gateways.reading import Information, OBISCode, Reading
+from custom_components.ppc_smgw.gateways.reading import Information, Reading
 
 from ..const import DEFAULT_MODEL, DEFAULT_NAME, MANUFACTURER
 
@@ -79,7 +80,7 @@ class EMHCasaClient:
         self.logger.error("No meter ID found")
         return None
 
-    async def _get_readings(self) -> dict[OBISCode, Reading]:
+    async def _get_readings(self) -> dict[OBIS, Reading]:
         self.logger.debug(f"Getting readings from {self.base_url}")
 
         if self.meter_id is None:
@@ -102,19 +103,21 @@ class EMHCasaClient:
             self.logger.error(f"Failed to fetch meter readings: {e}")
             return {}
 
+<<<<<<< HEAD
         readings: dict[OBISCode, Reading] = {}
         now = datetime.now(UTC)
+||||||| parent of 40ef631 (Adopt obis-parser library)
+        readings: dict[OBISCode, Reading] = {}
+        now = datetime.now(timezone.utc)
+=======
+        readings: dict[OBIS, Reading] = {}
+        now = datetime.now(timezone.utc)
+>>>>>>> 40ef631 (Adopt obis-parser library)
 
         for meter_value in meter_reading.get("values", []):
-            logical_name = meter_value.get("logical_name", "").split(".")[0]
-            if len(logical_name) != 12:
+            obis_obj = OBIS.parse(meter_value.get("logical_name", ""))
+            if obis_obj is None:
                 continue
-
-            # Convert hex logical name to OBIS code (e.g. '0100010800FF' -> '1-0:1.8.0')
-            c = int(logical_name[4:6], 16)
-            d = int(logical_name[6:8], 16)
-            e = int(logical_name[8:10], 16)
-            obis_code = f"1-0:{c}.{d}.{e}"
 
             # Scale value and convert Wh (unit 30) to kWh
             scaler = meter_value.get("scaler", 0)
@@ -123,10 +126,10 @@ class EMHCasaClient:
             if unit == 30:
                 value /= 1000
 
-            readings[obis_code] = Reading(
+            readings[obis_obj] = Reading(
                 value=value,
                 timestamp=now,
-                obis=obis_code,
+                obis=obis_obj,
             )
 
         self.logger.debug(f"Parsed {len(readings)} readings: {list(readings.keys())}")

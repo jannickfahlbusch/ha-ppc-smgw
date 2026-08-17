@@ -6,6 +6,8 @@ from unittest.mock import AsyncMock, MagicMock
 import httpx
 import pytest
 
+from obis_parser import OBIS
+
 from custom_components.ppc_smgw.gateways.theben.conexa.conexa import (
     ThebenConexaClient,
     ThebenMD5DigestAuth,
@@ -209,7 +211,9 @@ class TestThebenConexaClient:
             ]
         )
         readings = await client._get_readings()
-        assert "1-0:1.8.0" in readings
-        assert readings["1-0:1.8.0"].value == pytest.approx(1234.5678)
-        assert "1-0:2.8.0" in readings
-        assert readings["1-0:2.8.0"].value == pytest.approx(8765.4321)
+        obis_import = OBIS(1, 0, 1, 8, 0, 255)
+        obis_export = OBIS(1, 0, 2, 8, 0, 255)
+        assert obis_import in readings
+        assert readings[obis_import].value == pytest.approx(1234.5678)
+        assert obis_export in readings
+        assert readings[obis_export].value == pytest.approx(8765.4321)
