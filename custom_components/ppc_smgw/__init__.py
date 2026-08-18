@@ -1,19 +1,25 @@
-import logging
 from datetime import timedelta
+import logging
 
-import voluptuous as vol
 from homeassistant.const import (
+    CONF_DEBUG,
     CONF_HOST,
     CONF_PASSWORD,
+    CONF_SCAN_INTERVAL,
     CONF_USERNAME,
     Platform,
-    CONF_SCAN_INTERVAL,
-    CONF_DEBUG,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.httpx_client import create_async_httpx_client
 from homeassistant.loader import async_get_loaded_integration
+import voluptuous as vol
+
+from custom_components.ppc_smgw.gateways.emh.emh import EMHGateway
+from custom_components.ppc_smgw.gateways.gateway import Gateway
+from custom_components.ppc_smgw.gateways.ppc.ppc_smgw import PPC_SMGW
+from custom_components.ppc_smgw.gateways.theben.theben import ThebenConexa
+from custom_components.ppc_smgw.gateways.vendors import Vendor
 
 from .const import (
     CONF_METER_TYPE,
@@ -22,13 +28,8 @@ from .const import (
     DEFAULT_USE_LIBRARY,
     DOMAIN,
 )
+from .coordinator import ConfigEntry, Data, SMGwDataUpdateCoordinator
 from .gateways.emh.const import CONF_METER_ID as EMH_CONF_METER_ID
-from .coordinator import SMGwDataUpdateCoordinator, ConfigEntry, Data
-from custom_components.ppc_smgw.gateways.gateway import Gateway
-from custom_components.ppc_smgw.gateways.emh.emh import EMHGateway
-from custom_components.ppc_smgw.gateways.theben.theben import ThebenConexa
-from custom_components.ppc_smgw.gateways.vendors import Vendor
-from custom_components.ppc_smgw.gateways.ppc.ppc_smgw import PPC_SMGW
 
 _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
@@ -66,7 +67,7 @@ async def async_setup_entry(
     )
     match Vendor(entry.data[CONF_METER_TYPE]):
         case Vendor.PPC:
-            _LOGGER.debug(f"Initializing PPC SMGW client")
+            _LOGGER.debug("Initializing PPC SMGW client")
             # entry.data is the single source of truth (options are merged into
             # data by the options flow), matching how CONF_DEBUG is read above.
             use_library = entry.data.get(CONF_USE_LIBRARY, DEFAULT_USE_LIBRARY)
@@ -80,7 +81,7 @@ async def async_setup_entry(
                 use_library=use_library,
             )
         case Vendor.Theben:
-            _LOGGER.debug(f"Initializing Theben client")
+            _LOGGER.debug("Initializing Theben client")
             client = ThebenConexa(
                 host=entry.data[CONF_HOST],
                 username=entry.data[CONF_USERNAME],
@@ -90,7 +91,7 @@ async def async_setup_entry(
                 debug=development_mode,
             )
         case Vendor.EMH:
-            _LOGGER.debug(f"Initializing EMH CASA client")
+            _LOGGER.debug("Initializing EMH CASA client")
             client = EMHGateway(
                 host=entry.data[CONF_HOST],
                 username=entry.data[CONF_USERNAME],

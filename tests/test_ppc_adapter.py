@@ -1,20 +1,19 @@
 """Tests for the PPC adapter's built-in vs library data paths."""
 
+from datetime import UTC, datetime
 import logging
-from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from obis_parser import OBIS
+from py_ppc_smgw.types import FirmwareVersion, Meter, Reading as LibReading
 import pytest
 
-from custom_components.ppc_smgw.gateways.ppc.ppc_smgw import PPC_SMGW
 from custom_components.ppc_smgw.gateways.ppc.const import (
     DEFAULT_MODEL,
     MANUFACTURER,
 )
+from custom_components.ppc_smgw.gateways.ppc.ppc_smgw import PPC_SMGW
 from custom_components.ppc_smgw.gateways.reading import Information, Reading
-
-from obis_parser import OBIS
-from py_ppc_smgw.types import FirmwareVersion, Meter, Reading as LibReading
 
 _ADAPTER = "custom_components.ppc_smgw.gateways.ppc.ppc_smgw"
 
@@ -59,7 +58,7 @@ class TestPPCAdapterDataPath:
             model="M",
             manufacturer="Mfr",
             firmware_version="1-2",
-            last_update=datetime(2024, 1, 1, tzinfo=timezone.utc),
+            last_update=datetime(2024, 1, 1, tzinfo=UTC),
             readings={},
         )
         adapter.ppc_smgw_client.get_data = AsyncMock(return_value=canned)
@@ -161,7 +160,7 @@ class TestAsAware:
         assert PPC_SMGW._as_aware(None) is None
 
     def test_aware_datetime_is_returned_unchanged(self):
-        aware = datetime(2024, 12, 20, 16, 0, 1, tzinfo=timezone.utc)
+        aware = datetime(2024, 12, 20, 16, 0, 1, tzinfo=UTC)
         assert PPC_SMGW._as_aware(aware) is aware
 
     def test_naive_datetime_becomes_aware(self):

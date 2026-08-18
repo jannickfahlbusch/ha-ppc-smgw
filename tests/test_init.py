@@ -3,27 +3,26 @@
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-import pytz
-from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
-
 from homeassistant.const import (
     CONF_HOST,
     CONF_PASSWORD,
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
 )
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
+import pytest
+import pytz
 
 from custom_components.ppc_smgw import async_setup_entry, async_unload_entry
 from custom_components.ppc_smgw.const import (
     CONF_METER_TYPE,
-    DEFAULT_SCAN_INTERVAL,
+    CONF_USE_LIBRARY,
     DOMAIN,
 )
 from custom_components.ppc_smgw.coordinator import (
-    SMGwDataUpdateCoordinator,
     Data,
+    SMGwDataUpdateCoordinator,
 )
 from custom_components.ppc_smgw.gateways.reading import Information, Reading
 from custom_components.ppc_smgw.gateways.vendors import Vendor
@@ -114,8 +113,6 @@ class TestInit:
         self, hass: HomeAssistant, ppc_config_data, mock_gateway
     ):
         """use_library from entry.data must be forwarded to PPC_SMGW."""
-        from custom_components.ppc_smgw.const import CONF_USE_LIBRARY
-
         config_data = {**ppc_config_data, CONF_USE_LIBRARY: True}
         entry = create_mock_config_entry(data=config_data)
 

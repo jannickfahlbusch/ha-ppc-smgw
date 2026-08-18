@@ -17,13 +17,15 @@ Examples:
 """
 
 import asyncio
+from dataclasses import dataclass
+from datetime import datetime
 import importlib.util
 import logging
 import os
 import sys
 import types
-from dataclasses import dataclass
-from datetime import datetime
+
+import httpx
 
 # ---------------------------------------------------------------------------
 # Inline stubs for HA-dependent types used by emh_client.py
@@ -125,8 +127,6 @@ logger = logging.getLogger("emh_test")
 
 
 async def main(host: str, username: str, password: str, meter_id: str = "") -> None:
-    import httpx
-
     async with httpx.AsyncClient(verify=False) as client:
         emh = EMHCasaClient(
             base_url=host,

@@ -1,19 +1,19 @@
-import logging
+from dataclasses import dataclass
 from datetime import timedelta
+import logging
+
+from homeassistant.config_entries import ConfigEntry as HAConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from .const import DOMAIN
-from dataclasses import dataclass
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.loader import Integration
 
+from .const import DOMAIN
 from .gateways.gateway import Gateway
 from .gateways.reading import Information
 
-
 _LOGGER = logging.getLogger(__name__)
 
-type ConfigEntry = ConfigEntry[Data]
+type ConfigEntry = HAConfigEntry[Data]
 
 
 class SMGwDataUpdateCoordinator(DataUpdateCoordinator[Information | None]):

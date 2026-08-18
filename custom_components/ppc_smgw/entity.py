@@ -3,11 +3,10 @@ import logging
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import slugify
 
 from .const import DEFAULT_NAME
 from .coordinator import SMGwDataUpdateCoordinator
-from homeassistant.util import slugify
-
 
 _LOGGER = logging.getLogger(__name__)
 

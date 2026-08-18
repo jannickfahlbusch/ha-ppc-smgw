@@ -1,27 +1,28 @@
 """Tests for the PPC SMGW sensor platform."""
 
-import pytest
 from dataclasses import replace
 from datetime import datetime
 from unittest.mock import MagicMock
+
 from homeassistant.components.sensor import SensorEntityDescription
 from homeassistant.core import HomeAssistant
+import pytest
+import pytz
 
+from custom_components.ppc_smgw.const import (
+    SENSOR_TYPES,
+    FirmwareVersionSensorDescription,
+    LastUpdatedSensorDescription,
+)
+from custom_components.ppc_smgw.coordinator import Data
+from custom_components.ppc_smgw.gateways.reading import Information, Reading
 from custom_components.ppc_smgw.sensor import (
     FirmwareSensor,
     LastUpdatedSensor,
     OBISSensor,
     async_setup_entry,
 )
-from custom_components.ppc_smgw.const import (
-    FirmwareVersionSensorDescription,
-    LastUpdatedSensorDescription,
-    SENSOR_TYPES,
-)
-from custom_components.ppc_smgw.gateways.reading import Information, Reading
-from custom_components.ppc_smgw.coordinator import Data
 from tests.conftest import create_mock_config_entry
-import pytz
 
 
 @pytest.fixture
