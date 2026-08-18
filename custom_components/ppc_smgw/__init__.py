@@ -23,13 +23,12 @@ from custom_components.ppc_smgw.gateways.vendors import Vendor
 
 from .const import (
     CONF_METER_TYPE,
-    CONF_USE_LIBRARY,
     DEFAULT_SCAN_INTERVAL,
-    DEFAULT_USE_LIBRARY,
     DOMAIN,
 )
 from .coordinator import ConfigEntry, Data, SMGwDataUpdateCoordinator
 from .gateways.emh.const import CONF_METER_ID as EMH_CONF_METER_ID
+from .gateways.ppc import const as ppc_const
 
 _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
@@ -70,7 +69,9 @@ async def async_setup_entry(
             _LOGGER.debug("Initializing PPC SMGW client")
             # entry.data is the single source of truth (options are merged into
             # data by the options flow), matching how CONF_DEBUG is read above.
-            use_library = entry.data.get(CONF_USE_LIBRARY, DEFAULT_USE_LIBRARY)
+            use_library = entry.data.get(
+                ppc_const.CONF_USE_LIBRARY, ppc_const.DEFAULT_USE_LIBRARY
+            )
             client = PPC_SMGW(
                 host=entry.data[CONF_HOST],
                 username=entry.data[CONF_USERNAME],
@@ -164,6 +165,20 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry):
 
         hass.config_entries.async_update_entry(
             config_entry, data=new_data, minor_version=2, version=2
+        )
+
+    if config_entry.version == 2 and config_entry.minor_version < 3:
+        new_data = {**config_entry.data}
+        try:
+            vendor = Vendor(config_entry.data.get(CONF_METER_TYPE))
+        except (ValueError, TypeError):
+            vendor = Vendor.PPC
+
+        if vendor == Vendor.PPC:
+            new_data[ppc_const.CONF_USE_LIBRARY] = ppc_const.DEFAULT_USE_LIBRARY
+
+        hass.config_entries.async_update_entry(
+            config_entry, data=new_data, minor_version=3, version=2
         )
 
     _LOGGER.debug(

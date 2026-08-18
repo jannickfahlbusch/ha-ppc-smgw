@@ -13,6 +13,7 @@ from custom_components.ppc_smgw.gateways.gateway import Gateway
 from custom_components.ppc_smgw.gateways.ppc.const import (
     DEFAULT_MODEL,
     DEFAULT_NAME,
+    DEFAULT_USE_LIBRARY,
     MANUFACTURER,
 )
 from custom_components.ppc_smgw.gateways.ppc.ppcsmgw.ppc_smgw import PPCSmgw
@@ -35,12 +36,12 @@ class PPC_SMGW(Gateway):
         websession: httpx.AsyncClient,
         logger: logging.Logger,
         debug: bool = False,
-        use_library: bool = False,
+        use_library: bool = DEFAULT_USE_LIBRARY,
     ) -> None:
         super().__init__(host, username, password, websession, logger, debug)
 
-        # Opt-in flag: route through the py-ppc-smgw library instead of the
-        # built-in client. Default keeps the built-in client (below) unchanged.
+        # Feature toggle flag: route through the py-ppc-smgw library instead of the
+        # built-in client. Default uses the py-ppc-smgw library.
         self.use_library = use_library
 
         self.ppc_smgw_client = PPCSmgw(
