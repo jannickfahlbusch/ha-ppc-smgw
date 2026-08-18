@@ -1,16 +1,15 @@
 import logging
-from typing import Any, Optional
+from typing import Any
 
-import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.const import (
+    CONF_DEBUG,
     CONF_HOST,
     CONF_NAME,
     CONF_PASSWORD,
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
-    CONF_DEBUG,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.httpx_client import create_async_httpx_client
@@ -21,6 +20,7 @@ from homeassistant.helpers.selector import (
     TextSelectorConfig,
     TextSelectorType,
 )
+import voluptuous as vol
 
 from .const import (
     CONF_METER_TYPE,
@@ -32,8 +32,9 @@ from .const import (
     REPO_URL,
 )
 from .gateways.emh import const as emh_const
-from .gateways.theben import const as theben_const
+from .gateways.emh.emhcasa.emh_client import EMHCasaClient
 from .gateways.ppc import const as ppc_const
+from .gateways.theben import const as theben_const
 from .gateways.vendors import Vendor
 
 _LOGGER = logging.getLogger(__name__)
@@ -151,7 +152,7 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
-    data: Optional[dict[str, Any]]
+    data: dict[str, Any] | None
     _errors: dict[str, str] = {}
 
     async def _test_connection(self, host, username, password):
@@ -162,14 +163,11 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        if user_input is not None:
-            if not self._errors:
-                self.data = user_input
-                self.data[CONF_METER_TYPE]: Vendor = Vendor(
-                    user_input.get(CONF_METER_TYPE)
-                )
+        if user_input is not None and not self._errors:
+            self.data = user_input
+            self.data[CONF_METER_TYPE]: Vendor = Vendor(user_input.get(CONF_METER_TYPE))
 
-                return await self.async_step_connection_info(user_input)
+            return await self.async_step_connection_info(user_input)
 
         return self.async_show_form(
             step_id="user",
@@ -265,8 +263,6 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def _discover_emh_meter_ids(self) -> list[str]:
         """Call the EMH gateway and return all available meter IDs."""
-        from .gateways.emh.emhcasa.emh_client import EMHCasaClient
-
         client = EMHCasaClient(
             base_url=self.data[CONF_HOST],
             username=self.data[CONF_USERNAME],

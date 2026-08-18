@@ -2,23 +2,24 @@
 
 from unittest.mock import patch
 
-import pytest
-from homeassistant.const import CONF_HOST
 from homeassistant.const import (
+    CONF_DEBUG,
+    CONF_HOST,
     CONF_NAME,
     CONF_PASSWORD,
     CONF_SCAN_INTERVAL,
-    CONF_DEBUG,
+    CONF_USERNAME,
 )
-from homeassistant.const import CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+import pytest
 
 from custom_components.ppc_smgw.config_flow import (
+    PPC_SMGLocalConfigFlow,
     PPCSMGWLocalOptionsFlowHandler,
 )
-from custom_components.ppc_smgw.config_flow import PPC_SMGLocalConfigFlow
 from custom_components.ppc_smgw.const import CONF_METER_TYPE
+from custom_components.ppc_smgw.gateways.emh.const import CONF_METER_ID
 from custom_components.ppc_smgw.gateways.vendors import Vendor
 from tests.conftest import create_mock_config_entry
 
@@ -106,8 +107,6 @@ class TestConfigFlow:
         self, hass: HomeAssistant, emh_config_data
     ):
         """Test that selecting a meter in the EMH meter-select step creates the entry."""
-        from custom_components.ppc_smgw.gateways.emh.const import CONF_METER_ID
-
         flow = PPC_SMGLocalConfigFlow()
         flow.hass = hass
         flow.data = {**emh_config_data}
@@ -127,8 +126,6 @@ class TestConfigFlow:
         self, hass: HomeAssistant, emh_config_data
     ):
         """Test that the meter-select step shows a form when multiple meters are found."""
-        from custom_components.ppc_smgw.gateways.emh.const import CONF_METER_ID
-
         flow = PPC_SMGLocalConfigFlow()
         flow.hass = hass
         flow.data = {**emh_config_data}
@@ -152,8 +149,6 @@ class TestConfigFlow:
         self, hass: HomeAssistant, emh_config_data
     ):
         """Test that discovery failure falls back to auto-detect and creates the entry."""
-        from custom_components.ppc_smgw.gateways.emh.const import CONF_METER_ID
-
         flow = PPC_SMGLocalConfigFlow()
         flow.hass = hass
         flow.data = {**emh_config_data}
@@ -250,8 +245,6 @@ class TestConfigFlow:
         self, hass: HomeAssistant, emh_config_data
     ):
         """Test that selecting an already-configured meter shows an error."""
-        from custom_components.ppc_smgw.gateways.emh.const import CONF_METER_ID
-
         flow = PPC_SMGLocalConfigFlow()
         flow.hass = hass
         flow.data = {**emh_config_data}

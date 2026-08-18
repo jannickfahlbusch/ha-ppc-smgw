@@ -1,12 +1,12 @@
 import asyncio
-import logging
 from datetime import datetime
+import logging
 
-import httpx
-import urllib3
 from homeassistant.util.dt import now
+import httpx
 from py_ppc_smgw import PPCSMGWClient
 from py_ppc_smgw.types import FirmwareVersion, Meter
+import urllib3
 
 from custom_components.ppc_smgw.gateways.gateway import Gateway
 from custom_components.ppc_smgw.gateways.ppc.const import (

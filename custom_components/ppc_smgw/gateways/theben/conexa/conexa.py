@@ -1,9 +1,11 @@
+from datetime import UTC, datetime
 import logging
+
 import httpx
 
-from ..const import DEFAULT_NAME, DEFAULT_MODEL, MANUFACTURER
 from custom_components.ppc_smgw.gateways.reading import Information, OBISCode, Reading
-from datetime import datetime, timezone
+
+from ..const import DEFAULT_MODEL, DEFAULT_NAME, MANUFACTURER
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,7 +52,7 @@ class ThebenConexaClient:
             model=DEFAULT_MODEL,
             manufacturer=MANUFACTURER,
             firmware_version=await self._get_firmware_version(),
-            last_update=datetime.now(timezone.utc),
+            last_update=datetime.now(UTC),
             readings=await self._get_readings(),
         )
 

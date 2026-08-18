@@ -1,24 +1,26 @@
 """Fixtures for PPC SMGW integration tests."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+
 from homeassistant.const import (
+    CONF_DEBUG,
     CONF_HOST,
     CONF_NAME,
     CONF_PASSWORD,
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
-    CONF_DEBUG,
 )
+import pytest
+from pytest_homeassistant_custom_component.common import MockConfigEntry
+
 from custom_components.ppc_smgw.const import (
     CONF_METER_TYPE,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
 )
 from custom_components.ppc_smgw.gateways.emh import const as emh_const
-from custom_components.ppc_smgw.gateways.theben import const as theben_const
 from custom_components.ppc_smgw.gateways.ppc import const as ppc_const
+from custom_components.ppc_smgw.gateways.theben import const as theben_const
 from custom_components.ppc_smgw.gateways.vendors import Vendor
 
 

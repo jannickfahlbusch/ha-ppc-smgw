@@ -25,9 +25,8 @@ jobs:
         - name: "Install requirements"
           run: python3 -m pip install -r requirements.txt
 
-#        ToDo: Reenable this after the integration has proper docstrings and fulfills the standards of ruff/HA
-#        - name: "Lint"
-#          run: python3 -m ruff check .
+        - name: "Lint"
+          run: python3 -m ruff check .
 
         - name: "Format"
           run: python3 -m ruff format . --check --diff

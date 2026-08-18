@@ -8,12 +8,49 @@ select = [
 ]
 
 ignore = [
-    "ANN401", # Dynamically typed expressions (typing.Any) are disallowed
-    "D203", # no-blank-line-before-class (incompatible with formatter)
-    "D212", # multi-line-summary-first-line (incompatible with formatter)
-    "COM812", # incompatible with formatter
-    "ISC001", # incompatible with formatter
+    "A001",
+    "ANN",
+    "ARG",
+    "BLE",
+    "COM812",
+    "CPY",
+    "D",
+    "E501",
+    "EM",
+    "FBT",
+    "FIX",
+    "G004",
+    "INP",
+    "ISC001",
+    "N801",
+    "PERF",
+    "PLR",
+    "RUF012",
+    "S501",
+    "TC",
+    "TD",
+    "TID252",
+    "TRY",
 ]
+
+[lint.per-file-ignores]
+"tests/*" = [
+    "ARG",
+    "DTZ",
+    "S",
+    "SLF001",
+]
+"scripts/*" = [
+    "C408",
+    "INP001",
+    "PTH",
+    "T201",
+]
+
+[lint.isort]
+force-sort-within-sections = true
+known-first-party = ["custom_components.ppc_smgw"]
+combine-as-imports = true
 
 [lint.flake8-pytest-style]
 fixture-parentheses = false
