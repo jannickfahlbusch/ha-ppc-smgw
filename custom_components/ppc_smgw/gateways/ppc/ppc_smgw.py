@@ -63,8 +63,10 @@ class PPC_SMGW(Gateway):
             await asyncio.sleep(15)
             self.data = FakeInformation
         elif self.use_library:
+            self.logger.debug("Using py-ppc-smgw library for data fetching")
             self.data = await self._get_data_via_library()
         else:
+            self.logger.debug("Using legacy in-tree PPC client")
             self.data = await self.ppc_smgw_client.get_data()
 
         return self.data
