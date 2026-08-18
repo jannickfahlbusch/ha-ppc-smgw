@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 
 from homeassistant.components.sensor import SensorEntityDescription
 from homeassistant.core import HomeAssistant
+from obis_parser import OBIS
 import pytest
 import pytz
 
@@ -22,7 +23,6 @@ from custom_components.ppc_smgw.sensor import (
     OBISSensor,
     async_setup_entry,
 )
-from obis_parser import OBIS
 from tests.conftest import create_mock_config_entry
 
 

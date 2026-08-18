@@ -2,7 +2,6 @@ from datetime import UTC, datetime
 import logging
 
 import httpx
-
 from obis_parser import OBIS
 
 from custom_components.ppc_smgw.gateways.reading import Information, Reading

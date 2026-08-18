@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-import pytz
 from obis_parser import OBIS
+import pytz
 
 
 @dataclass

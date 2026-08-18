@@ -103,16 +103,8 @@ class EMHCasaClient:
             self.logger.error(f"Failed to fetch meter readings: {e}")
             return {}
 
-<<<<<<< HEAD
-        readings: dict[OBISCode, Reading] = {}
-        now = datetime.now(UTC)
-||||||| parent of 40ef631 (Adopt obis-parser library)
-        readings: dict[OBISCode, Reading] = {}
-        now = datetime.now(timezone.utc)
-=======
         readings: dict[OBIS, Reading] = {}
-        now = datetime.now(timezone.utc)
->>>>>>> 40ef631 (Adopt obis-parser library)
+        now = datetime.now(UTC)
 
         for meter_value in meter_reading.get("values", []):
             obis_obj = OBIS.parse(meter_value.get("logical_name", ""))

@@ -4,8 +4,8 @@ import logging
 from unittest.mock import AsyncMock, MagicMock
 
 import httpx
-import pytest
 from obis_parser import OBIS
+import pytest
 
 from custom_components.ppc_smgw.gateways.emh.emhcasa.emh_client import EMHCasaClient
 
