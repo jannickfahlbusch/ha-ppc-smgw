@@ -4,6 +4,7 @@ import logging
 from unittest.mock import AsyncMock, MagicMock
 
 import httpx
+from obis_parser import OBIS
 import pytest
 
 from custom_components.ppc_smgw.gateways.theben.conexa.conexa import (
@@ -209,7 +210,56 @@ class TestThebenConexaClient:
             ]
         )
         readings = await client._get_readings()
-        assert "1-0:1.8.0" in readings
-        assert readings["1-0:1.8.0"].value == pytest.approx(1234.5678)
-        assert "1-0:2.8.0" in readings
-        assert readings["1-0:2.8.0"].value == pytest.approx(8765.4321)
+        obis_import = OBIS(1, 0, 1, 8, 0, 255)
+        obis_export = OBIS(1, 0, 2, 8, 0, 255)
+        assert obis_import in readings
+        assert readings[obis_import].value == pytest.approx(1234.5678)
+        assert obis_export in readings
+        assert readings[obis_export].value == pytest.approx(8765.4321)
+
+    async def test_get_readings_skips_invalid_obis(self):
+        client = _make_client()
+        mock_user_info = {
+            "user-info": {
+                "usage-points": [
+                    {
+                        "usage-point-id": "UP001",
+                        "taf-state": "running",
+                        "taf-number": "7",
+                    }
+                ]
+            }
+        }
+        mock_readings = {
+            "readings": {
+                "channels": [
+                    {
+                        "obis": "invalid_hex",
+                        "readings": [
+                            {
+                                "value": "1234",
+                                "capture-time": "2026-08-14T12:00:00Z",
+                            }
+                        ],
+                    },
+                    {
+                        "obis": "0100010800ff",
+                        "readings": [
+                            {
+                                "value": "12345678",
+                                "capture-time": "2026-08-14T12:00:00Z",
+                            }
+                        ],
+                    },
+                ]
+            }
+        }
+        client.httpx_client.post = AsyncMock(
+            side_effect=[
+                _make_response(mock_user_info),
+                _make_response(mock_readings),
+            ]
+        )
+        readings = await client._get_readings()
+        assert len(readings) == 1
+        assert OBIS(1, 0, 1, 8, 0, 255) in readings

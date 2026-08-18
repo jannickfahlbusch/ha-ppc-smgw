@@ -2,8 +2,9 @@ from datetime import UTC, datetime
 import logging
 
 import httpx
+from obis_parser import OBIS
 
-from custom_components.ppc_smgw.gateways.reading import Information, OBISCode, Reading
+from custom_components.ppc_smgw.gateways.reading import Information, Reading
 
 from ..const import DEFAULT_MODEL, DEFAULT_NAME, MANUFACTURER
 
@@ -102,7 +103,7 @@ class ThebenConexaClient:
         )
         return usage_point_ids
 
-    async def _get_readings(self) -> dict[OBISCode, Reading]:
+    async def _get_readings(self) -> dict[OBIS, Reading]:
         self.logger.debug(f"Getting readings from {self.base_url}")
 
         usage_point_ids = await self._get_usage_point_ids()
@@ -110,7 +111,7 @@ class ThebenConexaClient:
             self.logger.error("No usage point ID found")
             return {}
 
-        readings: dict[OBISCode, Reading] = {}
+        readings: dict[OBIS, Reading] = {}
 
         for id in usage_point_ids:
             try:
@@ -141,22 +142,19 @@ class ThebenConexaClient:
                         "Too many readings found. Only support one at a time right now."
                     )
 
-                obis_hex = channel["obis"]
-                if obis_hex == "0100010800ff":
-                    obis_code = "1-0:1.8.0"
-                elif obis_hex == "0100020800ff":
-                    obis_code = "1-0:2.8.0"
-                else:
-                    self.logger.error("No or unknown OBIS code.")
+                obis_obj = OBIS.parse(channel["obis"])
+                if obis_obj is None:
+                    self.logger.error(f"No or unknown OBIS code: {channel.get('obis')}")
+                    continue
 
                 # So far, this logic only supports one reading per channel at once
                 reading = ch_readings[0]
-                readings[obis_code] = Reading(
+                readings[obis_obj] = Reading(
                     value=(
                         float(reading["value"]) / 10000
                     ),  # Watts of value? deciWatts!
                     timestamp=reading["capture-time"],
-                    obis=obis_code,
+                    obis=obis_obj,
                 )
         return readings
 

@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 
 from homeassistant.components.sensor import SensorEntityDescription
 from homeassistant.core import HomeAssistant
+from obis_parser import OBIS
 import pytest
 import pytz
 
@@ -43,15 +44,15 @@ def valid_information():
         firmware_version="1.0.0",
         last_update=datetime(2024, 1, 1, 12, 0, 0, tzinfo=pytz.UTC),
         readings={
-            "1-0:1.8.0*255": Reading(
+            OBIS(1, 0, 1, 8, 0): Reading(
                 value="1234.5",
                 timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=pytz.UTC),
-                obis="1-0:1.8.0*255",
+                obis=OBIS(1, 0, 1, 8, 0),
             ),
-            "1-0:2.8.0*255": Reading(
+            OBIS(1, 0, 2, 8, 0): Reading(
                 value="567.8",
                 timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=pytz.UTC),
-                obis="1-0:2.8.0*255",
+                obis=OBIS(1, 0, 2, 8, 0),
             ),
         },
     )
@@ -145,7 +146,7 @@ class TestOBISSensor:
         mock_coordinator.data = valid_information
 
         entity_description = SensorEntityDescription(
-            key="1-0:1.8.0*255",
+            key="1-0:1.8.0",
             name="Test Energy",
         )
 

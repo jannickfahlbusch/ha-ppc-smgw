@@ -6,8 +6,9 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from homeassistant.util.dt import now
 import httpx
+from obis_parser import OBIS
 
-from custom_components.ppc_smgw.gateways.reading import Information, OBISCode, Reading
+from custom_components.ppc_smgw.gateways.reading import Information, Reading
 
 from ..const import DEFAULT_MODEL, DEFAULT_NAME, MANUFACTURER
 from .errors import SessionCookieStillPresentError
@@ -142,7 +143,7 @@ class PPCSmgw:
 
         timestamp = ""
 
-        readings: dict[OBISCode, Reading] = {}
+        readings: dict[OBIS, Reading] = {}
 
         for row in rows:
             obis_code = row.find(id="table_metervalues_col_obis")
@@ -166,13 +167,13 @@ class PPCSmgw:
                     ).replace(tzinfo=now().tzinfo)
                     timestamp = current_timestamp
 
-                obis_code = row.find(id="table_metervalues_col_obis").string
-
-                readings[obis_code] = Reading(
-                    value=row.find(id="table_metervalues_col_wert").string,
-                    timestamp=current_timestamp,
-                    obis=obis_code,
-                )
+                obis_obj = OBIS.parse(row.find(id="table_metervalues_col_obis").string)
+                if obis_obj is not None:
+                    readings[obis_obj] = Reading(
+                        value=row.find(id="table_metervalues_col_wert").string,
+                        timestamp=current_timestamp,
+                        obis=obis_obj,
+                    )
 
         await self._logout()
 

@@ -101,8 +101,10 @@ class TestPPCAdapterDataPath:
         assert result.manufacturer == MANUFACTURER
         assert result.firmware_version == "33918-34868"
         # Readings mapped to the integration's own Reading type, tz-aware.
-        assert isinstance(result.readings["1-0:1.8.0"], Reading)
-        assert result.readings["1-0:1.8.0"].timestamp.tzinfo is not None
+        assert isinstance(result.readings[OBIS(1, 0, 1, 8, 0)], Reading)
+        assert result.readings[OBIS(1, 0, 1, 8, 0)].timestamp.tzinfo is not None
+        assert result.readings[OBIS(1, 0, 1, 8, 0)].obis == OBIS(1, 0, 1, 8, 0)
+        assert all(isinstance(k, OBIS) for k in result.readings)
         # last_update is the newest reading timestamp.
         assert result.last_update == adapter._as_aware(naive)
         # Only the first meter is read (parity with built-in client).

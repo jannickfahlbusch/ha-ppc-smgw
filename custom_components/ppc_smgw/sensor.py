@@ -74,13 +74,12 @@ class OBISSensor(SMGWEntity, SensorEntity):
         if not isinstance(data, Information):
             return None
 
-        if self.entity_description.key not in data.readings:
-            _LOGGER.debug(f"Found no value for {self.entity_description.key}")
-            return None
+        for obis_obj, reading in data.readings.items():
+            if obis_obj.canonical == self.entity_description.key:
+                return reading.value
 
-        reading = data.readings[self.entity_description.key]
-
-        return reading.value
+        _LOGGER.debug(f"Found no value for {self.entity_description.key}")
+        return None
 
 
 class LastUpdatedSensor(SMGWEntity, SensorEntity):
