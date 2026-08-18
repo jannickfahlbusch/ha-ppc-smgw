@@ -20,6 +20,7 @@ from custom_components.ppc_smgw.config_flow import (
 )
 from custom_components.ppc_smgw.const import CONF_METER_TYPE
 from custom_components.ppc_smgw.gateways.emh.const import CONF_METER_ID
+from custom_components.ppc_smgw.gateways.ppc import const as ppc_const
 from custom_components.ppc_smgw.gateways.vendors import Vendor
 from tests.conftest import create_mock_config_entry
 
@@ -375,16 +376,20 @@ class TestOptionsFlow:
             user_input={
                 k: ppc_config_data[k] for k in ["name", "host", "username", "password"]
             }
-            | {"scan_interval": 5, "debug": False, "use_library": True}
+            | {
+                CONF_SCAN_INTERVAL: 5,
+                CONF_DEBUG: False,
+                ppc_const.CONF_USE_LIBRARY: True,
+            }
         )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
-        assert entry.data["use_library"] is True
+        assert entry.data[ppc_const.CONF_USE_LIBRARY] is True
 
-    async def test_options_flow_use_library_defaults_false_when_absent(
+    async def test_options_flow_disables_use_library_when_opted_out(
         self, hass: HomeAssistant, ppc_config_data
     ):
-        """Omitting use_library leaves the built-in client (default) active."""
+        """Opting out of use_library (False) persists it to entry.data."""
         entry = create_mock_config_entry(data=ppc_config_data)
         hass.config_entries._entries[entry.entry_id] = entry
         options_flow = PPCSMGWLocalOptionsFlowHandler(entry)
@@ -394,11 +399,32 @@ class TestOptionsFlow:
             user_input={
                 k: ppc_config_data[k] for k in ["name", "host", "username", "password"]
             }
-            | {"scan_interval": 5, "debug": False}
+            | {
+                CONF_SCAN_INTERVAL: 5,
+                CONF_DEBUG: False,
+                ppc_const.CONF_USE_LIBRARY: False,
+            }
         )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
-        assert entry.data.get("use_library", False) is False
+        assert entry.data[ppc_const.CONF_USE_LIBRARY] is False
+
+    async def test_options_schema_defaults_use_library_to_true(
+        self, hass: HomeAssistant, ppc_config_data
+    ):
+        """use_library must default to True in the options schema for PPC."""
+        entry = create_mock_config_entry(data=ppc_config_data)
+        hass.config_entries._entries[entry.entry_id] = entry
+        options_flow = PPCSMGWLocalOptionsFlowHandler(entry)
+        options_flow.hass = hass
+
+        schema = options_flow._build_options_schema()
+        use_library_marker = next(
+            k
+            for k in schema.schema
+            if getattr(k, "schema", k) == ppc_const.CONF_USE_LIBRARY
+        )
+        assert use_library_marker.default() is True
 
     async def test_options_schema_shows_ppc_toggles_for_string_meter_type(
         self, hass: HomeAssistant, ppc_config_data
@@ -418,8 +444,8 @@ class TestOptionsFlow:
         schema = options_flow._build_options_schema()
         keys = {getattr(k, "schema", k) for k in schema.schema}
 
-        assert "use_library" in keys
-        assert "debug" in keys
+        assert ppc_const.CONF_USE_LIBRARY in keys
+        assert CONF_DEBUG in keys
 
     async def test_options_schema_falls_back_to_ppc_for_unknown_meter_type(
         self, hass: HomeAssistant, ppc_config_data
@@ -439,5 +465,5 @@ class TestOptionsFlow:
         schema = options_flow._build_options_schema()
         keys = {getattr(k, "schema", k) for k in schema.schema}
 
-        assert "use_library" in keys
-        assert "debug" in keys
+        assert ppc_const.CONF_USE_LIBRARY in keys
+        assert CONF_DEBUG in keys

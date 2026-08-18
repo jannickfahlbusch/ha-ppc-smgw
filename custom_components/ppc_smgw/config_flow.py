@@ -24,10 +24,8 @@ import voluptuous as vol
 
 from .const import (
     CONF_METER_TYPE,
-    CONF_USE_LIBRARY,
     DEFAULT_DEBUG,
     DEFAULT_SCAN_INTERVAL,
-    DEFAULT_USE_LIBRARY,
     DOMAIN,
     REPO_URL,
 )
@@ -56,7 +54,7 @@ def build_username_password_schema(
     optional_password: bool = False,
     default_meter_id: str | None = None,
     allow_use_library: bool = False,
-    default_use_library: bool = False,
+    default_use_library: bool = ppc_const.DEFAULT_USE_LIBRARY,
 ) -> vol.Schema:
     """Build a schema for username/password configuration.
 
@@ -97,7 +95,9 @@ def build_username_password_schema(
         schema[vol.Optional(CONF_DEBUG, default=default_debug)] = bool
 
     if allow_use_library:
-        schema[vol.Optional(CONF_USE_LIBRARY, default=default_use_library)] = bool
+        schema[
+            vol.Optional(ppc_const.CONF_USE_LIBRARY, default=default_use_library)
+        ] = bool
 
     if default_meter_id is not None:
         schema[vol.Optional(emh_const.CONF_METER_ID, default=default_meter_id)] = str
@@ -148,7 +148,7 @@ def _host_username_combination_exists(
 
 class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 2
-    MINOR_VERSION = 2
+    MINOR_VERSION = 3
 
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
@@ -419,14 +419,16 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
         # Determine if this is a PPC device (only vendor with debug option)
         is_ppc = vendor == Vendor.PPC
         current_debug = DEFAULT_DEBUG
-        current_use_library = DEFAULT_USE_LIBRARY
+        current_use_library = ppc_const.DEFAULT_USE_LIBRARY
         if is_ppc:
             current_debug = self.options.get(
                 CONF_DEBUG, self.data.get(CONF_DEBUG, DEFAULT_DEBUG)
             )
             current_use_library = self.options.get(
-                CONF_USE_LIBRARY,
-                self.data.get(CONF_USE_LIBRARY, DEFAULT_USE_LIBRARY),
+                ppc_const.CONF_USE_LIBRARY,
+                self.data.get(
+                    ppc_const.CONF_USE_LIBRARY, ppc_const.DEFAULT_USE_LIBRARY
+                ),
             )
 
         # For EMH, include the meter_id field

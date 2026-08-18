@@ -194,3 +194,15 @@ class TestPPCAdapterReboot:
 
         factory.client.reboot.assert_awaited_once()
         adapter.ppc_smgw_client.reboot.assert_not_awaited()
+
+
+def test_ppc_smgw_defaults_use_library_to_true():
+    """PPC_SMGW constructor defaults use_library to True when omitted."""
+    adapter = PPC_SMGW(
+        host="https://192.168.1.200/cgi-bin/hanservice.cgi",
+        username="testuser",
+        password="testpass",
+        websession=MagicMock(),
+        logger=logging.getLogger("test.ppc_adapter"),
+    )
+    assert adapter.use_library is True
