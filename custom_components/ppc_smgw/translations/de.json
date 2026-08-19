@@ -5,13 +5,13 @@
     },
     "step": {
       "user": {
-        "description": "Bitte wählen Sie den Hersteller Ihres Smart Meter Gateways aus",
+        "description": "Bitte wähle den Hersteller deines Smart Meter Gateways aus",
         "data": {
           "meter_type": "Hersteller"
         }
       },
       "connection_info": {
-        "description": "Bitte geben Sie die lokalen Verbindungsdaten für Ihr Smart Meter Gateway an.\nIhr Messstellenbetreiber bzw. Stromversorger stellt Ihnen die Zugangsdaten bereit.",
+        "description": "Bitte gib die lokalen Verbindungsdaten für dein Smart Meter Gateway an.\nDein Messstellenbetreiber bzw. Stromversorger stellt dir die Zugangsdaten bereit.",
         "data": {
           "name": "Anzeigename",
           "host": "SMGW-URL",
@@ -22,7 +22,7 @@
         }
       },
       "emh_meter_select": {
-        "description": "Wählen Sie den zu überwachenden Zähler aus. Wählen Sie 'Automatisch erkennen', um den ersten gefundenen Zähler zu nutzen, oder wählen Sie eine spezifische Zähler-ID, falls mehrere Zähler an diesem Gateway angeschlossen sind.",
+        "description": "Wähle den zu überwachenden Zähler aus. Wähle 'Automatisch erkennen', um den ersten gefundenen Zähler zu nutzen, oder wähle eine spezifische Zähler-ID, falls mehrere Zähler an diesem Gateway angeschlossen sind.",
         "data": {
           "meter_id": "Zähler"
         }
@@ -32,7 +32,7 @@
   "options": {
     "step": {
       "user": {
-        "description": "Hilfe zur Konfiguration finden Sie hier: {repo_url}",
+        "description": "Hilfe zur Konfiguration findest du hier: {repo_url}",
         "data": {
           "name": "Anzeigename",
           "host": "SMGW-URL",
