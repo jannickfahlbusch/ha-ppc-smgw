@@ -8,6 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import slugify
+from obis_parser import OBIS
 
 from custom_components.ppc_smgw.gateways.reading import Information
 
@@ -164,6 +165,7 @@ class OBISSensor(SMGWEntity, SensorEntity):
         """Initialize the sensor class."""
         super().__init__(coordinator, spec.description)
         self.entity_description = spec.description
+        self._obis_key: OBIS | None = OBIS.parse(spec.description.key)
 
         self._attr_unique_id = f"sensor.{self.get_entity_id_template()}"
         self.entity_id = self._attr_unique_id
@@ -190,18 +192,21 @@ class OBISSensor(SMGWEntity, SensorEntity):
     @property
     def native_value(self) -> str | float | None:
         """Return the native value of the sensor."""
-        _LOGGER.debug(f"Data: {self.coordinator.data}")
-
         data = self.coordinator.data
 
         if not isinstance(data, Information):
             return None
 
+        if self._obis_key is not None and (
+            reading := data.readings.get(self._obis_key)
+        ):
+            return reading.value
+
         for obis_obj, reading in data.readings.items():
             if obis_obj.canonical == self.entity_description.key:
                 return reading.value
 
-        _LOGGER.debug(f"Found no value for {self.entity_description.key}")
+        _LOGGER.debug("Found no value for %s", self.entity_description.key)
         return None
 
 

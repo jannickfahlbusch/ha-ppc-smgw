@@ -1,6 +1,6 @@
 import ast
 from dataclasses import replace
-from datetime import datetime
+from datetime import UTC, datetime
 import json
 from pathlib import Path
 import re
@@ -12,7 +12,6 @@ from homeassistant.helpers.entity import EntityCategory
 import obis_parser as obis_module
 from obis_parser import OBIS, OBIS_CATALOG
 import pytest
-import pytz
 
 from custom_components.ppc_smgw import sensor as sensor_module
 from custom_components.ppc_smgw.const import (
@@ -46,7 +45,7 @@ def _reading(value: str | float, obis: str | OBIS) -> Reading:
         obis = OBIS.parse(obis)
     return Reading(
         value=value,
-        timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=pytz.UTC),
+        timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC),
         obis=obis,
     )
 
@@ -63,7 +62,7 @@ def _information(readings: dict) -> Information:
         model="Test Model",
         manufacturer="Test Manufacturer",
         firmware_version="1.0.0",
-        last_update=datetime(2024, 1, 1, 12, 0, 0, tzinfo=pytz.UTC),
+        last_update=datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC),
         readings=norm_readings,
     )
 
@@ -104,16 +103,16 @@ def valid_information():
         model="Test Model",
         manufacturer="Test Manufacturer",
         firmware_version="1.0.0",
-        last_update=datetime(2024, 1, 1, 12, 0, 0, tzinfo=pytz.UTC),
+        last_update=datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC),
         readings={
             OBIS(1, 0, 1, 8, 0): Reading(
                 value="1234.5",
-                timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=pytz.UTC),
+                timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC),
                 obis=OBIS(1, 0, 1, 8, 0),
             ),
             OBIS(1, 0, 2, 8, 0): Reading(
                 value="567.8",
-                timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=pytz.UTC),
+                timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC),
                 obis=OBIS(1, 0, 2, 8, 0),
             ),
         },
@@ -771,6 +770,13 @@ class TestTranslations:
         assert set(en) == set(de)
         for platform in en:
             assert set(en[platform]) == set(de[platform]), platform
+
+    def test_config_options_parity(self):
+        """en and de must define matching config and options flow structure."""
+        en = json.loads((self._TR / "en.json").read_text())
+        de = json.loads((self._TR / "de.json").read_text())
+        assert set(en["config"]["step"]) == set(de["config"]["step"])
+        assert set(en["options"]["step"]) == set(de["options"]["step"])
 
     def test_system_entities_translated(self):
         """The non-OBIS entities must have translation entries in both languages."""

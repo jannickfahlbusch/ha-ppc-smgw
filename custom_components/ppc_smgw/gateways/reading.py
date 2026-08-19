@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
+import math
 import random
 
 from obis_parser import OBIS
-import pytz
 
 
 @dataclass
@@ -29,16 +31,16 @@ FakeInformation: Information = Information(
     model="TestModel",
     manufacturer="TestManufacturer",
     firmware_version="1337-version",
-    last_update=datetime(2024, 12, 20, 16, 0, 1, tzinfo=pytz.UTC),
+    last_update=datetime(2024, 12, 20, 16, 0, 1, tzinfo=UTC),
     readings={
         OBIS(1, 0, 1, 8, 0): Reading(
             value="724.9204",
-            timestamp=datetime(2024, 12, 20, 16, 0, 1, tzinfo=pytz.UTC),
+            timestamp=datetime(2024, 12, 20, 16, 0, 1, tzinfo=UTC),
             obis=OBIS(1, 0, 1, 8, 0),
         ),
         OBIS(1, 0, 2, 8, 0): Reading(
             value="3.0557",
-            timestamp=datetime(2024, 12, 20, 16, 0, 1, tzinfo=pytz.UTC),
+            timestamp=datetime(2024, 12, 20, 16, 0, 1, tzinfo=UTC),
             obis=OBIS(1, 0, 2, 8, 0),
         ),
     },
@@ -46,7 +48,7 @@ FakeInformation: Information = Information(
 
 
 def build_fake_information() -> Information:
-    now = datetime.now(pytz.UTC)
+    now = datetime.now(UTC)
     rnd = random.SystemRandom()
 
     v_l1 = round(rnd.uniform(228.0, 232.0), 2)
@@ -65,7 +67,7 @@ def build_fake_information() -> Information:
     i_tot = round(i_l1 + i_l2 + i_l3, 2)
 
     q_tot = round(rnd.uniform(10.0, 80.0), 1)
-    s_tot = round((p_tot**2 + q_tot**2) ** 0.5, 1)
+    s_tot = round(math.hypot(p_tot, q_tot), 1)
     pf = round(p_tot / s_tot if s_tot else 1.0, 3)
     freq = round(rnd.uniform(49.95, 50.05), 2)
 

@@ -5,6 +5,8 @@ strings from ``obis.py`` into HA enums/unit constants and bundles the
 translation key + placeholders that the sensor entity applies.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 
 from homeassistant.components.sensor import (
