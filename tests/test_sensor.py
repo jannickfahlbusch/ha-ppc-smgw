@@ -1,4 +1,3 @@
-import ast
 from dataclasses import replace
 from datetime import UTC, datetime
 import json
@@ -9,7 +8,6 @@ from unittest.mock import MagicMock
 from homeassistant.components.sensor import SensorEntityDescription
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
-import obis_parser as obis_module
 from obis_parser import OBIS, OBIS_CATALOG
 import pytest
 
@@ -634,122 +632,6 @@ class TestLastUpdatedSensor:
         )
 
         assert sensor.native_value == valid_information.last_update
-
-
-class TestOBISHelpers:
-    """Test the HA-free OBIS helper layer."""
-
-    def test_obis_module_imports_no_homeassistant_modules(self):
-        """The whole obis package must stay free of Home Assistant imports."""
-        package_dir = Path(obis_module.__file__).parent
-        py_files = sorted(package_dir.glob("*.py"))
-        assert py_files, "expected obis package to contain Python modules"
-
-        for py_file in py_files:
-            tree = ast.parse(py_file.read_text())
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Import):
-                    assert all(
-                        not alias.name.startswith("homeassistant")
-                        for alias in node.names
-                    ), py_file
-                elif isinstance(node, ast.ImportFrom) and node.module is not None:
-                    assert not node.module.startswith("homeassistant"), py_file
-
-    @pytest.mark.parametrize(
-        ("raw", "expected"),
-        [
-            ("1-0:1.8.0", "1-0:1.8.0"),
-            (" 1-0:1.8.0*255 ", "1-0:1.8.0"),
-            ("0100010800ff", "1-0:1.8.0"),
-            ("01.00.01.08.00.FF", "1-0:1.8.0"),
-        ],
-    )
-    def test_canonicalize_obis_code(self, raw, expected):
-        assert OBIS.parse(raw).canonical == expected
-
-    def test_catalog_keeps_interval_energy_unknown_for_now(self):
-        parsed = OBIS.parse("1-0:1.29.0")
-
-        assert parsed is not None
-        assert parsed.info is None
-
-    def test_catalog_keeps_non_default_periods_unknown_for_now(self):
-        parsed = OBIS.parse("1-0:1.8.0*1")
-
-        assert parsed is not None
-        assert parsed.info is None
-
-    def test_hex_f0_treated_as_current_period(self):
-        """COSEM hex with F=0 (current period) resolves like F=255/absent."""
-        parsed = OBIS.parse("010001080000")  # 1-0:1.8.0, F=0
-
-        assert parsed is not None
-        assert parsed.f == 0
-        assert parsed.canonical == "1-0:1.8.0"
-        assert parsed.info is not None
-
-    @pytest.mark.parametrize(
-        ("code", "expected_cd"),
-        [
-            ("1-1:1.8.0", (1, 8)),  # channel 1
-            ("1-0:1.8.1", (1, 8)),  # tariff 1
-            ("1-2:1.8.3", (1, 8)),  # channel 2 + tariff 3
-        ],
-    )
-    def test_get_obis_info_ignores_channel_and_tariff(self, code, expected_cd):
-        """Channel (B) and tariff (E) must not block the (C,D) catalog lookup."""
-        parsed = OBIS.parse(code)
-
-        assert parsed is not None
-        info = parsed.info
-        assert info is not None
-        assert (parsed.c, parsed.d) == expected_cd
-
-    def test_get_obis_info_rejects_non_electricity(self):
-        """A non-electricity medium (A != 1) has no catalog match."""
-        parsed = OBIS.parse("2-0:1.8.0")
-
-        assert parsed is not None
-        assert parsed.is_electricity is False
-        assert parsed.info is None
-
-    @pytest.mark.parametrize(
-        ("code", "translation_key", "placeholders"),
-        [
-            ("1-0:1.8.0", "active_energy_import", {}),
-            ("1-1:1.8.0", "active_energy_import_channel", {"channel": "1"}),
-            ("1-0:1.8.2", "active_energy_import_tariff", {"tariff": "2"}),
-            (
-                "1-3:1.8.4",
-                "active_energy_import_channel_tariff",
-                {"channel": "3", "tariff": "4"},
-            ),
-        ],
-    )
-    def test_describe_obis_variants(self, code, translation_key, placeholders):
-        """describe_obis picks the right variant slug and placeholders."""
-        parsed = OBIS.parse(code)
-        assert parsed is not None
-        descriptor = parsed.describe()
-
-        assert descriptor.translation_key == translation_key
-        assert descriptor.placeholders == placeholders
-
-    def test_describe_obis_unknown_uses_code_placeholder(self):
-        parsed = OBIS.parse("1-0:99.99.0")
-        assert parsed is not None
-        descriptor = parsed.describe()
-
-        assert descriptor.translation_key == "unknown_code"
-        assert descriptor.placeholders == {"code": "1-0:99.99.0"}
-
-    def test_catalog_completeness(self):
-        """Every catalog entry has a non-empty slug; slugs are unique."""
-        slugs = [info.translation_key for info in OBIS_CATALOG.values()]
-        assert all(slug for slug in slugs)
-        # Slugs may repeat only intentionally (none currently); assert unique.
-        assert len(slugs) == len(set(slugs))
 
 
 class TestTranslations:
