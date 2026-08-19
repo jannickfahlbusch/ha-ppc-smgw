@@ -18,9 +18,9 @@ from custom_components.ppc_smgw.gateways.ppc.const import (
 )
 from custom_components.ppc_smgw.gateways.ppc.ppcsmgw.ppc_smgw import PPCSmgw
 from custom_components.ppc_smgw.gateways.reading import (
-    FakeInformation,
     Information,
     Reading,
+    build_fake_information,
 )
 
 # Needed as the PPC SMGW uses a self-signed certificate
@@ -62,7 +62,7 @@ class PPC_SMGW(Gateway):
             # It takes around 15 seconds for the GW to respond to all calls
             # We should emulate this here to avoid timing issues
             await asyncio.sleep(15)
-            self.data = FakeInformation
+            self.data = build_fake_information()
         elif self.use_library:
             self.logger.debug("Using py-ppc-smgw library for data fetching")
             self.data = await self._get_data_via_library()
