@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 from datetime import datetime
 import logging
@@ -18,9 +20,9 @@ from custom_components.ppc_smgw.gateways.ppc.const import (
 )
 from custom_components.ppc_smgw.gateways.ppc.ppcsmgw.ppc_smgw import PPCSmgw
 from custom_components.ppc_smgw.gateways.reading import (
-    FakeInformation,
     Information,
     Reading,
+    build_fake_information,
 )
 
 # Needed as the PPC SMGW uses a self-signed certificate
@@ -43,6 +45,7 @@ class PPC_SMGW(Gateway):
         # Feature toggle flag: route through the py-ppc-smgw library instead of the
         # built-in client. Default uses the py-ppc-smgw library.
         self.use_library = use_library
+        self.dynamic_obis_discovery_enabled = use_library
 
         self.ppc_smgw_client = PPCSmgw(
             host=host,
@@ -61,7 +64,7 @@ class PPC_SMGW(Gateway):
             # It takes around 15 seconds for the GW to respond to all calls
             # We should emulate this here to avoid timing issues
             await asyncio.sleep(15)
-            self.data = FakeInformation
+            self.data = build_fake_information()
         elif self.use_library:
             self.logger.debug("Using py-ppc-smgw library for data fetching")
             self.data = await self._get_data_via_library()
@@ -94,7 +97,9 @@ class PPC_SMGW(Gateway):
                 for obis, reading in meter_readings.items():
                     ts = self._as_aware(reading.timestamp)
                     readings[obis] = Reading(
-                        value=reading.value, timestamp=ts, obis=obis
+                        value=self._coerce_reading_value(reading.value),
+                        timestamp=ts,
+                        obis=obis,
                     )
                     if ts is not None and (last_ts is None or ts > last_ts):
                         last_ts = ts
@@ -122,6 +127,14 @@ class PPC_SMGW(Gateway):
         if dt is None:
             return None
         return dt.replace(tzinfo=now().tzinfo) if dt.tzinfo is None else dt
+
+    @staticmethod
+    def _coerce_reading_value(value: str | float) -> str | float:
+        """Return numeric gateway values as numbers when possible."""
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return value
 
     @staticmethod
     def _construct_firmware_version(firmware_versions: list[FirmwareVersion]) -> str:

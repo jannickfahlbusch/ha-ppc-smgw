@@ -1,57 +1,443 @@
 {
-    "config": {
-      "abort": {
-        "already_configured": "Integration is already configured"
+  "config": {
+    "abort": {
+      "already_configured": "Integration is already configured"
+    },
+    "step": {
+      "user": {
+        "description": "Please select the vendor of your Smart Meter Gateway",
+        "data": {
+          "meter_type": "Vendor"
+        }
       },
-      "step": {
-        "user": {
-          "description": "Please select the vendor of your Smart Meter Gateway",
-          "data": {
-            "meter_type": "Vendor"
-          }
-        },
-        "connection_info": {
-          "description": "Please specify the local connection for your Smart Meter Gateway.\nYour electricity distributor should provide you with credentials.",
-          "data": {
-            "name": "Display name",
-            "host": "SMGW URL",
-            "username": "Username",
-            "password": "Password",
-            "scan_interval": "Polling Interval in minutes",
-            "debug": "Development mode - DO NOT USE (Uses fake data)"
-          }
-        },
-        "emh_meter_select": {
-          "description": "Select the meter to monitor. Choose 'Auto-detect' to use the first meter found, or pick a specific meter ID if you have multiple meters behind this gateway.",
-          "data": {
-            "meter_id": "Meter"
-          }
+      "connection_info": {
+        "description": "Please specify the local connection for your Smart Meter Gateway.\nYour electricity distributor should provide you with credentials.",
+        "data": {
+          "name": "Display name",
+          "host": "SMGW URL",
+          "username": "Username",
+          "password": "Password",
+          "scan_interval": "Polling Interval in minutes",
+          "debug": "Development mode - DO NOT USE (Uses fake data)"
+        }
+      },
+      "emh_meter_select": {
+        "description": "Select the meter to monitor. Choose 'Auto-detect' to use the first meter found, or pick a specific meter ID if you have multiple meters behind this gateway.",
+        "data": {
+          "meter_id": "Meter"
         }
       }
-    },
-    "options": {
-      "step": {
-        "user": {
-          "description": "If you need help with the configuration have a look here: {repo_url}",
-          "data": {
-            "name": "Display name",
-            "host": "SMGW URL",
-            "username": "Username",
-            "password": "Password",
-            "scan_interval": "Polling Interval in minutes",
-            "debug": "Development mode - DO NOT USE (Uses fake data)",
-            "use_library": "Use py-ppc-smgw client library",
-            "meter_id": "Meter ID (EMH only — leave blank for auto-detect)"
-          },
-          "data_description": {
-            "password": "Leave blank to keep the current password",
-            "use_library": "Leave enabled to use the py-ppc-smgw library (default). Disable to fall back to the legacy built-in client if you observe issues."
-          }
+    }
+  },
+  "options": {
+    "step": {
+      "user": {
+        "description": "If you need help with the configuration have a look here: {repo_url}",
+        "data": {
+          "name": "Display name",
+          "host": "SMGW URL",
+          "username": "Username",
+          "password": "Password",
+          "scan_interval": "Polling Interval in minutes",
+          "debug": "Development mode - DO NOT USE (Uses fake data)",
+          "use_library": "Use py-ppc-smgw client library",
+          "meter_id": "Meter ID (EMH only — leave blank for auto-detect)"
+        },
+        "data_description": {
+          "password": "Leave blank to keep the current password",
+          "use_library": "Leave enabled to use the py-ppc-smgw library (default). Disable to fall back to the legacy built-in client if you observe issues."
         }
       }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "active_energy_import": {
+        "name": "Active energy import"
+      },
+      "active_energy_import_channel": {
+        "name": "Active energy import (Channel {channel})"
+      },
+      "active_energy_import_tariff": {
+        "name": "Active energy import (Tariff {tariff})"
+      },
+      "active_energy_import_channel_tariff": {
+        "name": "Active energy import (Channel {channel}, Tariff {tariff})"
+      },
+      "active_energy_export": {
+        "name": "Active energy export"
+      },
+      "active_energy_export_channel": {
+        "name": "Active energy export (Channel {channel})"
+      },
+      "active_energy_export_tariff": {
+        "name": "Active energy export (Tariff {tariff})"
+      },
+      "active_energy_export_channel_tariff": {
+        "name": "Active energy export (Channel {channel}, Tariff {tariff})"
+      },
+      "reactive_energy_import": {
+        "name": "Reactive energy import"
+      },
+      "reactive_energy_import_channel": {
+        "name": "Reactive energy import (Channel {channel})"
+      },
+      "reactive_energy_import_tariff": {
+        "name": "Reactive energy import (Tariff {tariff})"
+      },
+      "reactive_energy_import_channel_tariff": {
+        "name": "Reactive energy import (Channel {channel}, Tariff {tariff})"
+      },
+      "reactive_energy_export": {
+        "name": "Reactive energy export"
+      },
+      "reactive_energy_export_channel": {
+        "name": "Reactive energy export (Channel {channel})"
+      },
+      "reactive_energy_export_tariff": {
+        "name": "Reactive energy export (Tariff {tariff})"
+      },
+      "reactive_energy_export_channel_tariff": {
+        "name": "Reactive energy export (Channel {channel}, Tariff {tariff})"
+      },
+      "apparent_energy": {
+        "name": "Apparent energy"
+      },
+      "apparent_energy_channel": {
+        "name": "Apparent energy (Channel {channel})"
+      },
+      "apparent_energy_tariff": {
+        "name": "Apparent energy (Tariff {tariff})"
+      },
+      "apparent_energy_channel_tariff": {
+        "name": "Apparent energy (Channel {channel}, Tariff {tariff})"
+      },
+      "active_power_import": {
+        "name": "Active power import"
+      },
+      "active_power_import_channel": {
+        "name": "Active power import (Channel {channel})"
+      },
+      "active_power_import_tariff": {
+        "name": "Active power import (Tariff {tariff})"
+      },
+      "active_power_import_channel_tariff": {
+        "name": "Active power import (Channel {channel}, Tariff {tariff})"
+      },
+      "active_power_export": {
+        "name": "Active power export"
+      },
+      "active_power_export_channel": {
+        "name": "Active power export (Channel {channel})"
+      },
+      "active_power_export_tariff": {
+        "name": "Active power export (Tariff {tariff})"
+      },
+      "active_power_export_channel_tariff": {
+        "name": "Active power export (Channel {channel}, Tariff {tariff})"
+      },
+      "reactive_power_import": {
+        "name": "Reactive power import"
+      },
+      "reactive_power_import_channel": {
+        "name": "Reactive power import (Channel {channel})"
+      },
+      "reactive_power_import_tariff": {
+        "name": "Reactive power import (Tariff {tariff})"
+      },
+      "reactive_power_import_channel_tariff": {
+        "name": "Reactive power import (Channel {channel}, Tariff {tariff})"
+      },
+      "reactive_power_export": {
+        "name": "Reactive power export"
+      },
+      "reactive_power_export_channel": {
+        "name": "Reactive power export (Channel {channel})"
+      },
+      "reactive_power_export_tariff": {
+        "name": "Reactive power export (Tariff {tariff})"
+      },
+      "reactive_power_export_channel_tariff": {
+        "name": "Reactive power export (Channel {channel}, Tariff {tariff})"
+      },
+      "apparent_power": {
+        "name": "Apparent power"
+      },
+      "apparent_power_channel": {
+        "name": "Apparent power (Channel {channel})"
+      },
+      "apparent_power_tariff": {
+        "name": "Apparent power (Tariff {tariff})"
+      },
+      "apparent_power_channel_tariff": {
+        "name": "Apparent power (Channel {channel}, Tariff {tariff})"
+      },
+      "active_power_total": {
+        "name": "Active power total"
+      },
+      "active_power_total_channel": {
+        "name": "Active power total (Channel {channel})"
+      },
+      "active_power_total_tariff": {
+        "name": "Active power total (Tariff {tariff})"
+      },
+      "active_power_total_channel_tariff": {
+        "name": "Active power total (Channel {channel}, Tariff {tariff})"
+      },
+      "absolute_active_power": {
+        "name": "Absolute active power"
+      },
+      "absolute_active_power_channel": {
+        "name": "Absolute active power (Channel {channel})"
+      },
+      "absolute_active_power_tariff": {
+        "name": "Absolute active power (Tariff {tariff})"
+      },
+      "absolute_active_power_channel_tariff": {
+        "name": "Absolute active power (Channel {channel}, Tariff {tariff})"
+      },
+      "active_power_l1": {
+        "name": "Active power L1"
+      },
+      "active_power_l1_channel": {
+        "name": "Active power L1 (Channel {channel})"
+      },
+      "active_power_l1_tariff": {
+        "name": "Active power L1 (Tariff {tariff})"
+      },
+      "active_power_l1_channel_tariff": {
+        "name": "Active power L1 (Channel {channel}, Tariff {tariff})"
+      },
+      "active_power_l2": {
+        "name": "Active power L2"
+      },
+      "active_power_l2_channel": {
+        "name": "Active power L2 (Channel {channel})"
+      },
+      "active_power_l2_tariff": {
+        "name": "Active power L2 (Tariff {tariff})"
+      },
+      "active_power_l2_channel_tariff": {
+        "name": "Active power L2 (Channel {channel}, Tariff {tariff})"
+      },
+      "active_power_l3": {
+        "name": "Active power L3"
+      },
+      "active_power_l3_channel": {
+        "name": "Active power L3 (Channel {channel})"
+      },
+      "active_power_l3_tariff": {
+        "name": "Active power L3 (Tariff {tariff})"
+      },
+      "active_power_l3_channel_tariff": {
+        "name": "Active power L3 (Channel {channel}, Tariff {tariff})"
+      },
+      "active_power_import_l1": {
+        "name": "Active power import L1"
+      },
+      "active_power_import_l1_channel": {
+        "name": "Active power import L1 (Channel {channel})"
+      },
+      "active_power_import_l1_tariff": {
+        "name": "Active power import L1 (Tariff {tariff})"
+      },
+      "active_power_import_l1_channel_tariff": {
+        "name": "Active power import L1 (Channel {channel}, Tariff {tariff})"
+      },
+      "active_power_import_l2": {
+        "name": "Active power import L2"
+      },
+      "active_power_import_l2_channel": {
+        "name": "Active power import L2 (Channel {channel})"
+      },
+      "active_power_import_l2_tariff": {
+        "name": "Active power import L2 (Tariff {tariff})"
+      },
+      "active_power_import_l2_channel_tariff": {
+        "name": "Active power import L2 (Channel {channel}, Tariff {tariff})"
+      },
+      "active_power_import_l3": {
+        "name": "Active power import L3"
+      },
+      "active_power_import_l3_channel": {
+        "name": "Active power import L3 (Channel {channel})"
+      },
+      "active_power_import_l3_tariff": {
+        "name": "Active power import L3 (Tariff {tariff})"
+      },
+      "active_power_import_l3_channel_tariff": {
+        "name": "Active power import L3 (Channel {channel}, Tariff {tariff})"
+      },
+      "active_power_export_l1": {
+        "name": "Active power export L1"
+      },
+      "active_power_export_l1_channel": {
+        "name": "Active power export L1 (Channel {channel})"
+      },
+      "active_power_export_l1_tariff": {
+        "name": "Active power export L1 (Tariff {tariff})"
+      },
+      "active_power_export_l1_channel_tariff": {
+        "name": "Active power export L1 (Channel {channel}, Tariff {tariff})"
+      },
+      "active_power_export_l2": {
+        "name": "Active power export L2"
+      },
+      "active_power_export_l2_channel": {
+        "name": "Active power export L2 (Channel {channel})"
+      },
+      "active_power_export_l2_tariff": {
+        "name": "Active power export L2 (Tariff {tariff})"
+      },
+      "active_power_export_l2_channel_tariff": {
+        "name": "Active power export L2 (Channel {channel}, Tariff {tariff})"
+      },
+      "active_power_export_l3": {
+        "name": "Active power export L3"
+      },
+      "active_power_export_l3_channel": {
+        "name": "Active power export L3 (Channel {channel})"
+      },
+      "active_power_export_l3_tariff": {
+        "name": "Active power export L3 (Tariff {tariff})"
+      },
+      "active_power_export_l3_channel_tariff": {
+        "name": "Active power export L3 (Channel {channel}, Tariff {tariff})"
+      },
+      "voltage_l1": {
+        "name": "Voltage L1"
+      },
+      "voltage_l1_channel": {
+        "name": "Voltage L1 (Channel {channel})"
+      },
+      "voltage_l1_tariff": {
+        "name": "Voltage L1 (Tariff {tariff})"
+      },
+      "voltage_l1_channel_tariff": {
+        "name": "Voltage L1 (Channel {channel}, Tariff {tariff})"
+      },
+      "voltage_l2": {
+        "name": "Voltage L2"
+      },
+      "voltage_l2_channel": {
+        "name": "Voltage L2 (Channel {channel})"
+      },
+      "voltage_l2_tariff": {
+        "name": "Voltage L2 (Tariff {tariff})"
+      },
+      "voltage_l2_channel_tariff": {
+        "name": "Voltage L2 (Channel {channel}, Tariff {tariff})"
+      },
+      "voltage_l3": {
+        "name": "Voltage L3"
+      },
+      "voltage_l3_channel": {
+        "name": "Voltage L3 (Channel {channel})"
+      },
+      "voltage_l3_tariff": {
+        "name": "Voltage L3 (Tariff {tariff})"
+      },
+      "voltage_l3_channel_tariff": {
+        "name": "Voltage L3 (Channel {channel}, Tariff {tariff})"
+      },
+      "voltage": {
+        "name": "Voltage"
+      },
+      "voltage_channel": {
+        "name": "Voltage (Channel {channel})"
+      },
+      "voltage_tariff": {
+        "name": "Voltage (Tariff {tariff})"
+      },
+      "voltage_channel_tariff": {
+        "name": "Voltage (Channel {channel}, Tariff {tariff})"
+      },
+      "current_l1": {
+        "name": "Current L1"
+      },
+      "current_l1_channel": {
+        "name": "Current L1 (Channel {channel})"
+      },
+      "current_l1_tariff": {
+        "name": "Current L1 (Tariff {tariff})"
+      },
+      "current_l1_channel_tariff": {
+        "name": "Current L1 (Channel {channel}, Tariff {tariff})"
+      },
+      "current_l2": {
+        "name": "Current L2"
+      },
+      "current_l2_channel": {
+        "name": "Current L2 (Channel {channel})"
+      },
+      "current_l2_tariff": {
+        "name": "Current L2 (Tariff {tariff})"
+      },
+      "current_l2_channel_tariff": {
+        "name": "Current L2 (Channel {channel}, Tariff {tariff})"
+      },
+      "current_l3": {
+        "name": "Current L3"
+      },
+      "current_l3_channel": {
+        "name": "Current L3 (Channel {channel})"
+      },
+      "current_l3_tariff": {
+        "name": "Current L3 (Tariff {tariff})"
+      },
+      "current_l3_channel_tariff": {
+        "name": "Current L3 (Channel {channel}, Tariff {tariff})"
+      },
+      "current": {
+        "name": "Current"
+      },
+      "current_channel": {
+        "name": "Current (Channel {channel})"
+      },
+      "current_tariff": {
+        "name": "Current (Tariff {tariff})"
+      },
+      "current_channel_tariff": {
+        "name": "Current (Channel {channel}, Tariff {tariff})"
+      },
+      "power_factor": {
+        "name": "Power factor"
+      },
+      "power_factor_channel": {
+        "name": "Power factor (Channel {channel})"
+      },
+      "power_factor_tariff": {
+        "name": "Power factor (Tariff {tariff})"
+      },
+      "power_factor_channel_tariff": {
+        "name": "Power factor (Channel {channel}, Tariff {tariff})"
+      },
+      "frequency": {
+        "name": "Frequency"
+      },
+      "frequency_channel": {
+        "name": "Frequency (Channel {channel})"
+      },
+      "frequency_tariff": {
+        "name": "Frequency (Tariff {tariff})"
+      },
+      "frequency_channel_tariff": {
+        "name": "Frequency (Channel {channel}, Tariff {tariff})"
+      },
+      "unknown_code": {
+        "name": "OBIS {code}"
+      },
+      "last_update": {
+        "name": "Last update"
+      },
+      "firmware_version": {
+        "name": "Firmware version"
+      }
     },
-    "entity": {
-      "sensor": {
+    "button": {
+      "restart_gateway": {
+        "name": "Restart gateway"
       }
     }
   }
+}

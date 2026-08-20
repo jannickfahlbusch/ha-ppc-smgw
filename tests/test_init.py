@@ -1,6 +1,6 @@
 """Tests for PPC SMGW integration initialization - simplified version."""
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.const import (
@@ -12,7 +12,6 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 import pytest
-import pytz
 
 from custom_components.ppc_smgw import (
     async_migrate_entry,
@@ -304,11 +303,11 @@ class TestCoordinator:
             model="Test Model",
             manufacturer="Test Manufacturer",
             firmware_version="1.0.0",
-            last_update=datetime(2024, 1, 1, 12, 0, 0, tzinfo=pytz.UTC),
+            last_update=datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC),
             readings={
                 "1-0:1.8.0": Reading(
                     value="1234.56",
-                    timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=pytz.UTC),
+                    timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC),
                     obis="1-0:1.8.0",
                 ),
             },

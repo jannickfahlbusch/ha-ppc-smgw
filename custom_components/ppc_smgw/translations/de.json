@@ -1,0 +1,443 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Die Integration ist bereits konfiguriert"
+    },
+    "step": {
+      "user": {
+        "description": "Bitte wähle den Hersteller deines Smart Meter Gateways aus",
+        "data": {
+          "meter_type": "Hersteller"
+        }
+      },
+      "connection_info": {
+        "description": "Bitte gib die lokalen Verbindungsdaten für dein Smart Meter Gateway an.\nDein Messstellenbetreiber bzw. Stromversorger stellt dir die Zugangsdaten bereit.",
+        "data": {
+          "name": "Anzeigename",
+          "host": "SMGW-URL",
+          "username": "Benutzername",
+          "password": "Passwort",
+          "scan_interval": "Abfrageintervall in Minuten",
+          "debug": "Entwicklungsmodus - NICHT VERWENDEN (nutzt Testdaten)"
+        }
+      },
+      "emh_meter_select": {
+        "description": "Wähle den zu überwachenden Zähler aus. Wähle 'Automatisch erkennen', um den ersten gefundenen Zähler zu nutzen, oder wähle eine spezifische Zähler-ID, falls mehrere Zähler an diesem Gateway angeschlossen sind.",
+        "data": {
+          "meter_id": "Zähler"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "user": {
+        "description": "Hilfe zur Konfiguration findest du hier: {repo_url}",
+        "data": {
+          "name": "Anzeigename",
+          "host": "SMGW-URL",
+          "username": "Benutzername",
+          "password": "Passwort",
+          "scan_interval": "Abfrageintervall in Minuten",
+          "debug": "Entwicklungsmodus - NICHT VERWENDEN (nutzt Testdaten)",
+          "use_library": "py-ppc-smgw Client-Bibliothek verwenden",
+          "meter_id": "Zähler-ID (nur EMH — leer lassen für automatische Erkennung)"
+        },
+        "data_description": {
+          "password": "Leer lassen, um das aktuelle Passwort beizubehalten",
+          "use_library": "Aktiviert lassen, um die py-ppc-smgw Bibliothek zu nutzen (Standard). Deaktivieren, um bei Problemen auf den bisherigen integrierten Client zurückzugreifen."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "active_energy_import": {
+        "name": "Wirkenergie Bezug"
+      },
+      "active_energy_import_channel": {
+        "name": "Wirkenergie Bezug (Kanal {channel})"
+      },
+      "active_energy_import_tariff": {
+        "name": "Wirkenergie Bezug (Tarif {tariff})"
+      },
+      "active_energy_import_channel_tariff": {
+        "name": "Wirkenergie Bezug (Kanal {channel}, Tarif {tariff})"
+      },
+      "active_energy_export": {
+        "name": "Wirkenergie Einspeisung"
+      },
+      "active_energy_export_channel": {
+        "name": "Wirkenergie Einspeisung (Kanal {channel})"
+      },
+      "active_energy_export_tariff": {
+        "name": "Wirkenergie Einspeisung (Tarif {tariff})"
+      },
+      "active_energy_export_channel_tariff": {
+        "name": "Wirkenergie Einspeisung (Kanal {channel}, Tarif {tariff})"
+      },
+      "reactive_energy_import": {
+        "name": "Blindenergie Bezug"
+      },
+      "reactive_energy_import_channel": {
+        "name": "Blindenergie Bezug (Kanal {channel})"
+      },
+      "reactive_energy_import_tariff": {
+        "name": "Blindenergie Bezug (Tarif {tariff})"
+      },
+      "reactive_energy_import_channel_tariff": {
+        "name": "Blindenergie Bezug (Kanal {channel}, Tarif {tariff})"
+      },
+      "reactive_energy_export": {
+        "name": "Blindenergie Einspeisung"
+      },
+      "reactive_energy_export_channel": {
+        "name": "Blindenergie Einspeisung (Kanal {channel})"
+      },
+      "reactive_energy_export_tariff": {
+        "name": "Blindenergie Einspeisung (Tarif {tariff})"
+      },
+      "reactive_energy_export_channel_tariff": {
+        "name": "Blindenergie Einspeisung (Kanal {channel}, Tarif {tariff})"
+      },
+      "apparent_energy": {
+        "name": "Scheinenergie"
+      },
+      "apparent_energy_channel": {
+        "name": "Scheinenergie (Kanal {channel})"
+      },
+      "apparent_energy_tariff": {
+        "name": "Scheinenergie (Tarif {tariff})"
+      },
+      "apparent_energy_channel_tariff": {
+        "name": "Scheinenergie (Kanal {channel}, Tarif {tariff})"
+      },
+      "active_power_import": {
+        "name": "Wirkleistung Bezug"
+      },
+      "active_power_import_channel": {
+        "name": "Wirkleistung Bezug (Kanal {channel})"
+      },
+      "active_power_import_tariff": {
+        "name": "Wirkleistung Bezug (Tarif {tariff})"
+      },
+      "active_power_import_channel_tariff": {
+        "name": "Wirkleistung Bezug (Kanal {channel}, Tarif {tariff})"
+      },
+      "active_power_export": {
+        "name": "Wirkleistung Einspeisung"
+      },
+      "active_power_export_channel": {
+        "name": "Wirkleistung Einspeisung (Kanal {channel})"
+      },
+      "active_power_export_tariff": {
+        "name": "Wirkleistung Einspeisung (Tarif {tariff})"
+      },
+      "active_power_export_channel_tariff": {
+        "name": "Wirkleistung Einspeisung (Kanal {channel}, Tarif {tariff})"
+      },
+      "reactive_power_import": {
+        "name": "Blindleistung Bezug"
+      },
+      "reactive_power_import_channel": {
+        "name": "Blindleistung Bezug (Kanal {channel})"
+      },
+      "reactive_power_import_tariff": {
+        "name": "Blindleistung Bezug (Tarif {tariff})"
+      },
+      "reactive_power_import_channel_tariff": {
+        "name": "Blindleistung Bezug (Kanal {channel}, Tarif {tariff})"
+      },
+      "reactive_power_export": {
+        "name": "Blindleistung Einspeisung"
+      },
+      "reactive_power_export_channel": {
+        "name": "Blindleistung Einspeisung (Kanal {channel})"
+      },
+      "reactive_power_export_tariff": {
+        "name": "Blindleistung Einspeisung (Tarif {tariff})"
+      },
+      "reactive_power_export_channel_tariff": {
+        "name": "Blindleistung Einspeisung (Kanal {channel}, Tarif {tariff})"
+      },
+      "apparent_power": {
+        "name": "Scheinleistung"
+      },
+      "apparent_power_channel": {
+        "name": "Scheinleistung (Kanal {channel})"
+      },
+      "apparent_power_tariff": {
+        "name": "Scheinleistung (Tarif {tariff})"
+      },
+      "apparent_power_channel_tariff": {
+        "name": "Scheinleistung (Kanal {channel}, Tarif {tariff})"
+      },
+      "active_power_total": {
+        "name": "Wirkleistung Summe"
+      },
+      "active_power_total_channel": {
+        "name": "Wirkleistung Summe (Kanal {channel})"
+      },
+      "active_power_total_tariff": {
+        "name": "Wirkleistung Summe (Tarif {tariff})"
+      },
+      "active_power_total_channel_tariff": {
+        "name": "Wirkleistung Summe (Kanal {channel}, Tarif {tariff})"
+      },
+      "absolute_active_power": {
+        "name": "Wirkleistung absolut"
+      },
+      "absolute_active_power_channel": {
+        "name": "Wirkleistung absolut (Kanal {channel})"
+      },
+      "absolute_active_power_tariff": {
+        "name": "Wirkleistung absolut (Tarif {tariff})"
+      },
+      "absolute_active_power_channel_tariff": {
+        "name": "Wirkleistung absolut (Kanal {channel}, Tarif {tariff})"
+      },
+      "active_power_l1": {
+        "name": "Wirkleistung L1"
+      },
+      "active_power_l1_channel": {
+        "name": "Wirkleistung L1 (Kanal {channel})"
+      },
+      "active_power_l1_tariff": {
+        "name": "Wirkleistung L1 (Tarif {tariff})"
+      },
+      "active_power_l1_channel_tariff": {
+        "name": "Wirkleistung L1 (Kanal {channel}, Tarif {tariff})"
+      },
+      "active_power_l2": {
+        "name": "Wirkleistung L2"
+      },
+      "active_power_l2_channel": {
+        "name": "Wirkleistung L2 (Kanal {channel})"
+      },
+      "active_power_l2_tariff": {
+        "name": "Wirkleistung L2 (Tarif {tariff})"
+      },
+      "active_power_l2_channel_tariff": {
+        "name": "Wirkleistung L2 (Kanal {channel}, Tarif {tariff})"
+      },
+      "active_power_l3": {
+        "name": "Wirkleistung L3"
+      },
+      "active_power_l3_channel": {
+        "name": "Wirkleistung L3 (Kanal {channel})"
+      },
+      "active_power_l3_tariff": {
+        "name": "Wirkleistung L3 (Tarif {tariff})"
+      },
+      "active_power_l3_channel_tariff": {
+        "name": "Wirkleistung L3 (Kanal {channel}, Tarif {tariff})"
+      },
+      "active_power_import_l1": {
+        "name": "Wirkleistung Bezug L1"
+      },
+      "active_power_import_l1_channel": {
+        "name": "Wirkleistung Bezug L1 (Kanal {channel})"
+      },
+      "active_power_import_l1_tariff": {
+        "name": "Wirkleistung Bezug L1 (Tarif {tariff})"
+      },
+      "active_power_import_l1_channel_tariff": {
+        "name": "Wirkleistung Bezug L1 (Kanal {channel}, Tarif {tariff})"
+      },
+      "active_power_import_l2": {
+        "name": "Wirkleistung Bezug L2"
+      },
+      "active_power_import_l2_channel": {
+        "name": "Wirkleistung Bezug L2 (Kanal {channel})"
+      },
+      "active_power_import_l2_tariff": {
+        "name": "Wirkleistung Bezug L2 (Tarif {tariff})"
+      },
+      "active_power_import_l2_channel_tariff": {
+        "name": "Wirkleistung Bezug L2 (Kanal {channel}, Tarif {tariff})"
+      },
+      "active_power_import_l3": {
+        "name": "Wirkleistung Bezug L3"
+      },
+      "active_power_import_l3_channel": {
+        "name": "Wirkleistung Bezug L3 (Kanal {channel})"
+      },
+      "active_power_import_l3_tariff": {
+        "name": "Wirkleistung Bezug L3 (Tarif {tariff})"
+      },
+      "active_power_import_l3_channel_tariff": {
+        "name": "Wirkleistung Bezug L3 (Kanal {channel}, Tarif {tariff})"
+      },
+      "active_power_export_l1": {
+        "name": "Wirkleistung Einspeisung L1"
+      },
+      "active_power_export_l1_channel": {
+        "name": "Wirkleistung Einspeisung L1 (Kanal {channel})"
+      },
+      "active_power_export_l1_tariff": {
+        "name": "Wirkleistung Einspeisung L1 (Tarif {tariff})"
+      },
+      "active_power_export_l1_channel_tariff": {
+        "name": "Wirkleistung Einspeisung L1 (Kanal {channel}, Tarif {tariff})"
+      },
+      "active_power_export_l2": {
+        "name": "Wirkleistung Einspeisung L2"
+      },
+      "active_power_export_l2_channel": {
+        "name": "Wirkleistung Einspeisung L2 (Kanal {channel})"
+      },
+      "active_power_export_l2_tariff": {
+        "name": "Wirkleistung Einspeisung L2 (Tarif {tariff})"
+      },
+      "active_power_export_l2_channel_tariff": {
+        "name": "Wirkleistung Einspeisung L2 (Kanal {channel}, Tarif {tariff})"
+      },
+      "active_power_export_l3": {
+        "name": "Wirkleistung Einspeisung L3"
+      },
+      "active_power_export_l3_channel": {
+        "name": "Wirkleistung Einspeisung L3 (Kanal {channel})"
+      },
+      "active_power_export_l3_tariff": {
+        "name": "Wirkleistung Einspeisung L3 (Tarif {tariff})"
+      },
+      "active_power_export_l3_channel_tariff": {
+        "name": "Wirkleistung Einspeisung L3 (Kanal {channel}, Tarif {tariff})"
+      },
+      "voltage_l1": {
+        "name": "Spannung L1"
+      },
+      "voltage_l1_channel": {
+        "name": "Spannung L1 (Kanal {channel})"
+      },
+      "voltage_l1_tariff": {
+        "name": "Spannung L1 (Tarif {tariff})"
+      },
+      "voltage_l1_channel_tariff": {
+        "name": "Spannung L1 (Kanal {channel}, Tarif {tariff})"
+      },
+      "voltage_l2": {
+        "name": "Spannung L2"
+      },
+      "voltage_l2_channel": {
+        "name": "Spannung L2 (Kanal {channel})"
+      },
+      "voltage_l2_tariff": {
+        "name": "Spannung L2 (Tarif {tariff})"
+      },
+      "voltage_l2_channel_tariff": {
+        "name": "Spannung L2 (Kanal {channel}, Tarif {tariff})"
+      },
+      "voltage_l3": {
+        "name": "Spannung L3"
+      },
+      "voltage_l3_channel": {
+        "name": "Spannung L3 (Kanal {channel})"
+      },
+      "voltage_l3_tariff": {
+        "name": "Spannung L3 (Tarif {tariff})"
+      },
+      "voltage_l3_channel_tariff": {
+        "name": "Spannung L3 (Kanal {channel}, Tarif {tariff})"
+      },
+      "voltage": {
+        "name": "Spannung"
+      },
+      "voltage_channel": {
+        "name": "Spannung (Kanal {channel})"
+      },
+      "voltage_tariff": {
+        "name": "Spannung (Tarif {tariff})"
+      },
+      "voltage_channel_tariff": {
+        "name": "Spannung (Kanal {channel}, Tarif {tariff})"
+      },
+      "current_l1": {
+        "name": "Strom L1"
+      },
+      "current_l1_channel": {
+        "name": "Strom L1 (Kanal {channel})"
+      },
+      "current_l1_tariff": {
+        "name": "Strom L1 (Tarif {tariff})"
+      },
+      "current_l1_channel_tariff": {
+        "name": "Strom L1 (Kanal {channel}, Tarif {tariff})"
+      },
+      "current_l2": {
+        "name": "Strom L2"
+      },
+      "current_l2_channel": {
+        "name": "Strom L2 (Kanal {channel})"
+      },
+      "current_l2_tariff": {
+        "name": "Strom L2 (Tarif {tariff})"
+      },
+      "current_l2_channel_tariff": {
+        "name": "Strom L2 (Kanal {channel}, Tarif {tariff})"
+      },
+      "current_l3": {
+        "name": "Strom L3"
+      },
+      "current_l3_channel": {
+        "name": "Strom L3 (Kanal {channel})"
+      },
+      "current_l3_tariff": {
+        "name": "Strom L3 (Tarif {tariff})"
+      },
+      "current_l3_channel_tariff": {
+        "name": "Strom L3 (Kanal {channel}, Tarif {tariff})"
+      },
+      "current": {
+        "name": "Strom"
+      },
+      "current_channel": {
+        "name": "Strom (Kanal {channel})"
+      },
+      "current_tariff": {
+        "name": "Strom (Tarif {tariff})"
+      },
+      "current_channel_tariff": {
+        "name": "Strom (Kanal {channel}, Tarif {tariff})"
+      },
+      "power_factor": {
+        "name": "Leistungsfaktor"
+      },
+      "power_factor_channel": {
+        "name": "Leistungsfaktor (Kanal {channel})"
+      },
+      "power_factor_tariff": {
+        "name": "Leistungsfaktor (Tarif {tariff})"
+      },
+      "power_factor_channel_tariff": {
+        "name": "Leistungsfaktor (Kanal {channel}, Tarif {tariff})"
+      },
+      "frequency": {
+        "name": "Frequenz"
+      },
+      "frequency_channel": {
+        "name": "Frequenz (Kanal {channel})"
+      },
+      "frequency_tariff": {
+        "name": "Frequenz (Tarif {tariff})"
+      },
+      "frequency_channel_tariff": {
+        "name": "Frequenz (Kanal {channel}, Tarif {tariff})"
+      },
+      "unknown_code": {
+        "name": "OBIS {code}"
+      },
+      "last_update": {
+        "name": "Letzte Aktualisierung"
+      },
+      "firmware_version": {
+        "name": "Firmware-Version"
+      }
+    },
+    "button": {
+      "restart_gateway": {
+        "name": "Gateway neu starten"
+      }
+    }
+  }
+}
