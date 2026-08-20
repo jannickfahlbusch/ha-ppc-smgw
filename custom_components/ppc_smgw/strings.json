@@ -1,23 +1,32 @@
 {
   "config": {
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+    },
     "step": {
       "user": {
+        "description": "Please select the vendor of your Smart Meter Gateway",
+        "data": {
+          "meter_type": "Vendor"
+        }
+      },
+      "connection_info": {
+        "description": "Please specify the local connection for your Smart Meter Gateway.\nYour electricity distributor should provide you with credentials.",
         "data": {
           "name": "[%key:common::config_flow::data::name%]",
           "host": "[%key:common::config_flow::data::host%]",
           "username": "[%key:common::config_flow::data::username%]",
           "password": "[%key:common::config_flow::data::password%]",
-          "scan_interval": "[%key:common::config_flow::data::scan_interval%]"
+          "scan_interval": "[%key:common::config_flow::data::scan_interval%]",
+          "debug": "Development mode - DO NOT USE (Uses fake data)"
         }
       },
       "emh_meter_select": {
+        "description": "Select the meter to monitor. Choose 'Auto-detect' to use the first meter found, or pick a specific meter ID if you have multiple meters behind this gateway.",
         "data": {
           "meter_id": "Meter"
         }
       }
-    },
-    "abort": {
-      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
     }
   },
   "options": {

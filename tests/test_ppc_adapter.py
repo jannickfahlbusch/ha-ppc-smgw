@@ -47,10 +47,10 @@ def _library_client_mock(meters=None, readings=None, firmware=None) -> MagicMock
 
 @pytest.mark.asyncio
 class TestPPCAdapterDataPath:
-    """get_data() must pick the right client based on use_library."""
+    """Tests for PPC adapter data retrieval and mapping."""
 
     async def test_dynamic_obis_discovery_activated(self):
-        """use_library=False keeps the static sensor rollout path."""
+        """PPC adapter enables dynamic OBIS discovery by default."""
         adapter = _make_adapter()
 
         assert adapter.dynamic_obis_discovery_enabled is True

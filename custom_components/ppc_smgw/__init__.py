@@ -60,9 +60,7 @@ async def async_setup_entry(
 
     client: Gateway
 
-    _LOGGER.debug(
-        f"Vendor is: {entry.data[CONF_METER_TYPE]} ({type(entry.data[CONF_METER_TYPE])})"
-    )
+    _LOGGER.debug("Vendor is: %s", entry.data.get(CONF_METER_TYPE))
     match entry.data.get(CONF_METER_TYPE):
         case Vendor.PPC:
             _LOGGER.debug("Initializing PPC SMGW client")

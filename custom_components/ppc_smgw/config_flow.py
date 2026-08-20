@@ -139,7 +139,7 @@ def _host_username_combination_exists(
 
 class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 2
-    MINOR_VERSION = 3
+    MINOR_VERSION = 4
 
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
@@ -374,10 +374,7 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
         Returns:
             A voluptuous Schema populated with current configuration values.
         """
-        try:
-            vendor = Vendor(self.data.get(CONF_METER_TYPE))
-        except ValueError:
-            vendor = Vendor.PPC
+        vendor = self.data.get(CONF_METER_TYPE)
 
         # Get vendor-specific default name
         if vendor == Vendor.Theben:
