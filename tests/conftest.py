@@ -43,7 +43,7 @@ def create_mock_config_entry(
     entry_id: str = "test_entry_id",
     options: dict | None = None,
     version: int = 2,
-    minor_version: int = 3,
+    minor_version: int = 4,
 ) -> MockConfigEntry:
     """Factory function to create ConfigEntry objects for testing."""
     return MockConfigEntry(

@@ -18,7 +18,7 @@ from custom_components.ppc_smgw.gateways.reading import Information, Reading
 _ADAPTER = "custom_components.ppc_smgw.gateways.ppc.ppc_smgw"
 
 
-def _make_adapter(use_library: bool) -> PPC_SMGW:
+def _make_adapter() -> PPC_SMGW:
     """Build a real PPC_SMGW adapter with a stub websession/logger."""
     return PPC_SMGW(
         host="https://192.168.1.200/cgi-bin/hanservice.cgi",
@@ -26,7 +26,6 @@ def _make_adapter(use_library: bool) -> PPC_SMGW:
         password="testpass",
         websession=MagicMock(),
         logger=logging.getLogger("test.ppc_adapter"),
-        use_library=use_library,
     )
 
 
@@ -48,56 +47,17 @@ def _library_client_mock(meters=None, readings=None, firmware=None) -> MagicMock
 
 @pytest.mark.asyncio
 class TestPPCAdapterDataPath:
-    """get_data() must pick the right client based on use_library."""
+    """Tests for PPC adapter data retrieval and mapping."""
 
-    async def test_builtin_path_keeps_dynamic_discovery_disabled(self):
-        """use_library=False keeps the static sensor rollout path."""
-        adapter = _make_adapter(use_library=False)
-
-        assert adapter.dynamic_obis_discovery_enabled is False
-
-    async def test_library_path_enables_dynamic_discovery(self):
-        """use_library=True is the only rollout gate for dynamic discovery."""
-        adapter = _make_adapter(use_library=True)
+    async def test_dynamic_obis_discovery_activated(self):
+        """PPC adapter enables dynamic OBIS discovery by default."""
+        adapter = _make_adapter()
 
         assert adapter.dynamic_obis_discovery_enabled is True
 
-    async def test_debug_does_not_disable_library_dynamic_discovery(self):
-        """Debug fake-data mode still uses the use_library rollout flag."""
-        adapter = PPC_SMGW(
-            host="https://192.168.1.200/cgi-bin/hanservice.cgi",
-            username="testuser",
-            password="testpass",
-            websession=MagicMock(),
-            logger=logging.getLogger("test.ppc_adapter"),
-            debug=True,
-            use_library=True,
-        )
-
-        assert adapter.dynamic_obis_discovery_enabled is True
-
-    async def test_builtin_path_returns_client_data_untouched(self):
-        """use_library=False delegates to the built-in client, unchanged."""
-        adapter = _make_adapter(use_library=False)
-        canned = Information(
-            name="N",
-            model="M",
-            manufacturer="Mfr",
-            firmware_version="1-2",
-            last_update=datetime(2024, 1, 1, tzinfo=UTC),
-            readings={},
-        )
-        adapter.ppc_smgw_client.get_data = AsyncMock(return_value=canned)
-
-        with patch(f"{_ADAPTER}.PPCSMGWClient") as lib_cls:
-            result = await adapter.get_data()
-
-        assert result is canned
-        lib_cls.assert_not_called()
-
-    async def test_library_path_maps_canonical_readings_and_firmware(self):
-        """use_library=True maps library readings to canonical Information data."""
-        adapter = _make_adapter(use_library=True)
+    async def test_adapter_maps_canonical_readings_and_firmware(self):
+        """Adapter maps library readings to canonical Information data."""
+        adapter = _make_adapter()
 
         naive = datetime(2024, 12, 20, 16, 0, 1)  # tz-naive on purpose
         older = datetime(2024, 12, 20, 15, 0, 0)
@@ -139,9 +99,9 @@ class TestPPCAdapterDataPath:
         # Only the first meter is read (parity with built-in client).
         factory.client.get_meter_reading.assert_awaited_once()
 
-    async def test_library_path_no_meters_gives_empty_readings(self):
+    async def test_adapter_no_meters_gives_empty_readings(self):
         """No meters → empty readings and a tz-aware now() fallback."""
-        adapter = _make_adapter(use_library=True)
+        adapter = _make_adapter()
         factory = _library_client_mock(meters=[], firmware=[])
 
         with patch(f"{_ADAPTER}.PPCSMGWClient", factory):
@@ -201,37 +161,11 @@ class TestAsAware:
 
 @pytest.mark.asyncio
 class TestPPCAdapterReboot:
-    """reboot() must target the right client based on use_library."""
-
-    async def test_builtin_reboot_delegates_to_builtin_client(self):
-        adapter = _make_adapter(use_library=False)
-        adapter.ppc_smgw_client.reboot = AsyncMock()
-
-        with patch(f"{_ADAPTER}.PPCSMGWClient") as lib_cls:
-            await adapter.reboot()
-
-        adapter.ppc_smgw_client.reboot.assert_awaited_once()
-        lib_cls.assert_not_called()
-
-    async def test_library_reboot_delegates_to_library_client(self):
-        adapter = _make_adapter(use_library=True)
-        adapter.ppc_smgw_client.reboot = AsyncMock()
+    async def test_library_reboot_calls_reboot(self):
+        adapter = _make_adapter()
         factory = _library_client_mock()
 
         with patch(f"{_ADAPTER}.PPCSMGWClient", factory):
             await adapter.reboot()
 
         factory.client.reboot.assert_awaited_once()
-        adapter.ppc_smgw_client.reboot.assert_not_awaited()
-
-
-def test_ppc_smgw_defaults_use_library_to_true():
-    """PPC_SMGW constructor defaults use_library to True when omitted."""
-    adapter = PPC_SMGW(
-        host="https://192.168.1.200/cgi-bin/hanservice.cgi",
-        username="testuser",
-        password="testpass",
-        websession=MagicMock(),
-        logger=logging.getLogger("test.ppc_adapter"),
-    )
-    assert adapter.use_library is True

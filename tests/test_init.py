@@ -26,7 +26,6 @@ from custom_components.ppc_smgw.coordinator import (
     Data,
     SMGwDataUpdateCoordinator,
 )
-from custom_components.ppc_smgw.gateways.ppc import const as ppc_const
 from custom_components.ppc_smgw.gateways.reading import Information, Reading
 from custom_components.ppc_smgw.gateways.vendors import Vendor
 from tests.conftest import create_mock_config_entry
@@ -112,40 +111,10 @@ class TestInit:
             # Verify the error message contains the host
             assert ppc_config_data["host"] in str(exc_info.value)
 
-    async def test_setup_entry_passes_use_library_when_enabled(
+    async def test_setup_entry_initializes_ppc_gateway(
         self, hass: HomeAssistant, ppc_config_data, mock_gateway
     ):
-        """use_library from entry.data must be forwarded to PPC_SMGW."""
-        config_data = {**ppc_config_data, ppc_const.CONF_USE_LIBRARY: True}
-        entry = create_mock_config_entry(data=config_data)
-
-        mock_integration = MagicMock()
-        mock_integration.domain = DOMAIN
-        mock_coordinator = MagicMock()
-        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
-        ppc_cls = MagicMock(return_value=mock_gateway)
-
-        with (
-            patch("custom_components.ppc_smgw.PPC_SMGW", ppc_cls),
-            patch("custom_components.ppc_smgw.create_async_httpx_client"),
-            patch(
-                "custom_components.ppc_smgw.async_get_loaded_integration",
-                return_value=mock_integration,
-            ),
-            patch.object(hass.config_entries, "async_forward_entry_setups"),
-            patch(
-                "custom_components.ppc_smgw.SMGwDataUpdateCoordinator",
-                return_value=mock_coordinator,
-            ),
-        ):
-            await async_setup_entry(hass, entry)
-
-        assert ppc_cls.call_args.kwargs[ppc_const.CONF_USE_LIBRARY] is True
-
-    async def test_setup_entry_defaults_use_library_true(
-        self, hass: HomeAssistant, ppc_config_data, mock_gateway
-    ):
-        """Without the key in entry.data, PPC_SMGW must get use_library=True."""
+        """PPC entry initializes PPC_SMGW adapter with entry data."""
         entry = create_mock_config_entry(data=ppc_config_data)
 
         mock_integration = MagicMock()
@@ -169,37 +138,9 @@ class TestInit:
         ):
             await async_setup_entry(hass, entry)
 
-        assert ppc_cls.call_args.kwargs[ppc_const.CONF_USE_LIBRARY] is True
-
-    async def test_setup_entry_passes_use_library_false_when_opted_out(
-        self, hass: HomeAssistant, ppc_config_data, mock_gateway
-    ):
-        """When use_library is explicitly False in entry.data, PPC_SMGW must get use_library=False."""
-        config_data = {**ppc_config_data, ppc_const.CONF_USE_LIBRARY: False}
-        entry = create_mock_config_entry(data=config_data)
-
-        mock_integration = MagicMock()
-        mock_integration.domain = DOMAIN
-        mock_coordinator = MagicMock()
-        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
-        ppc_cls = MagicMock(return_value=mock_gateway)
-
-        with (
-            patch("custom_components.ppc_smgw.PPC_SMGW", ppc_cls),
-            patch("custom_components.ppc_smgw.create_async_httpx_client"),
-            patch(
-                "custom_components.ppc_smgw.async_get_loaded_integration",
-                return_value=mock_integration,
-            ),
-            patch.object(hass.config_entries, "async_forward_entry_setups"),
-            patch(
-                "custom_components.ppc_smgw.SMGwDataUpdateCoordinator",
-                return_value=mock_coordinator,
-            ),
-        ):
-            await async_setup_entry(hass, entry)
-
-        assert ppc_cls.call_args.kwargs[ppc_const.CONF_USE_LIBRARY] is False
+        assert ppc_cls.call_args.kwargs["host"] == ppc_config_data["host"]
+        assert ppc_cls.call_args.kwargs["username"] == ppc_config_data["username"]
+        assert ppc_cls.call_args.kwargs["password"] == ppc_config_data["password"]
 
     async def test_setup_entry_uses_configured_scan_interval(
         self, hass: HomeAssistant, mock_gateway
@@ -401,8 +342,8 @@ class TestCoordinator:
 class TestMigration:
     """Test config entry version migrations."""
 
-    async def test_migrate_v1_to_v2_3(self, hass: HomeAssistant):
-        """v1 entry migrates to v2.3 with Vendor.PPC and use_library=True."""
+    async def test_migrate_v1_to_v2_4(self, hass: HomeAssistant):
+        """v1 entry migrates to v2.4 with Vendor.PPC."""
         old_data = {
             "name": "PPC SMGW",
             "host": "https://192.168.1.200/cgi-bin/hanservice.cgi",
@@ -417,29 +358,28 @@ class TestMigration:
 
         assert result is True
         assert entry.version == 2
-        assert entry.minor_version == 3
+        assert entry.minor_version == 4
         assert entry.data[CONF_METER_TYPE] == Vendor.PPC
-        assert entry.data[ppc_const.CONF_USE_LIBRARY] is True
+        assert "use_library" not in entry.data
 
-    async def test_migrate_v2_2_ppc_to_v2_3(self, hass: HomeAssistant, ppc_config_data):
-        """v2.2 PPC entry migrates to v2.3 with use_library=True."""
-        # Entry might have had use_library=False from older opt-in default
-        data = {**ppc_config_data, ppc_const.CONF_USE_LIBRARY: False}
-        entry = create_mock_config_entry(data=data, version=2, minor_version=2)
+    async def test_migrate_v2_3_ppc_to_v2_4(self, hass: HomeAssistant, ppc_config_data):
+        """v2.3 PPC entry migrates to v2.4 by removing obsolete use_library."""
+        data = {**ppc_config_data, "use_library": True}
+        entry = create_mock_config_entry(data=data, version=2, minor_version=3)
         hass.config_entries._entries[entry.entry_id] = entry
 
         result = await async_migrate_entry(hass, entry)
 
         assert result is True
         assert entry.version == 2
-        assert entry.minor_version == 3
+        assert entry.minor_version == 4
         assert entry.data[CONF_METER_TYPE] == Vendor.PPC
-        assert entry.data[ppc_const.CONF_USE_LIBRARY] is True
+        assert "use_library" not in entry.data
 
-    async def test_migrate_v2_2_non_ppc_to_v2_3(
+    async def test_migrate_non_ppc_to_v2_4(
         self, hass: HomeAssistant, theben_config_data
     ):
-        """v2.2 Theben entry migrates to v2.3 without setting PPC-specific use_library."""
+        """Non-PPC entry migrates to v2.4 without adding PPC fields."""
         entry = create_mock_config_entry(
             data=theben_config_data, version=2, minor_version=2
         )
@@ -449,5 +389,5 @@ class TestMigration:
 
         assert result is True
         assert entry.version == 2
-        assert entry.minor_version == 3
-        assert ppc_const.CONF_USE_LIBRARY not in entry.data
+        assert entry.minor_version == 4
+        assert "use_library" not in entry.data
