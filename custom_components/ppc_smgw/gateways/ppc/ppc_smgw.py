@@ -92,9 +92,6 @@ class PPC_SMGW(Gateway):
             last_ts: datetime | None = None
 
             meters: list[Meter] = await client.get_meters()
-            self.logger.debug(
-                "Using py-ppc-smgw data path; discovered %d meter(s)", len(meters)
-            )
             if meters:
                 meter_readings = await client.get_meter_reading(meters[0])
                 for obis, reading in meter_readings.items():
@@ -106,10 +103,6 @@ class PPC_SMGW(Gateway):
                     )
                     if ts is not None and (last_ts is None or ts > last_ts):
                         last_ts = ts
-                self.logger.debug(
-                    "Mapped %d py-ppc-smgw reading(s) to Information",
-                    len(readings),
-                )
 
             firmware = self._construct_firmware_version(
                 await client.get_firmware_versions()
