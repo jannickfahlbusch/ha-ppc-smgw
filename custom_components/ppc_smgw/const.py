@@ -45,6 +45,7 @@ LastUpdatedSensorDescription = SensorEntityDescription(
     icon="mdi:clock-time-eight",
     native_unit_of_measurement=None,
     device_class=SensorDeviceClass.TIMESTAMP,
+    entity_category=EntityCategory.DIAGNOSTIC,
 )
 
 FirmwareVersionSensorDescription = SensorEntityDescription(
