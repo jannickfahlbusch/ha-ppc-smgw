@@ -40,12 +40,10 @@
           "password": "Passwort",
           "scan_interval": "Abfrageintervall in Minuten",
           "debug": "Entwicklungsmodus - NICHT VERWENDEN (nutzt Testdaten)",
-          "use_library": "py-ppc-smgw Client-Bibliothek verwenden",
           "meter_id": "Zähler-ID (nur EMH — leer lassen für automatische Erkennung)"
         },
         "data_description": {
-          "password": "Leer lassen, um das aktuelle Passwort beizubehalten",
-          "use_library": "Aktiviert lassen, um die py-ppc-smgw Bibliothek zu nutzen (Standard). Deaktivieren, um bei Problemen auf den bisherigen integrierten Client zurückzugreifen."
+          "password": "Leer lassen, um das aktuelle Passwort beizubehalten"
         }
       }
     }

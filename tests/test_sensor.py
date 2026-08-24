@@ -216,7 +216,6 @@ class TestSensorPlatformSetup:
         mock_add_entities = MagicMock()
         client = MagicMock()
         client.dynamic_obis_discovery_enabled = True
-        client.get_meter_profile = MagicMock()
 
         entry = _entry_with_runtime_data(ppc_config_data, mock_coordinator, client)
 
@@ -235,7 +234,6 @@ class TestSensorPlatformSetup:
         assert obis_sensors[0]._attr_translation_key == "active_energy_import"
         mock_coordinator.async_add_listener.assert_called_once()
         entry.async_on_unload.assert_called_once()
-        client.get_meter_profile.assert_not_called()
 
     async def test_dynamic_path_removes_stale_static_obis_entities(
         self, hass: HomeAssistant, ppc_config_data, monkeypatch: pytest.MonkeyPatch

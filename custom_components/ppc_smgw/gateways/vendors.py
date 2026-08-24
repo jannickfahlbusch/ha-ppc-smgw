@@ -1,7 +1,7 @@
 import enum
 
 
-class Vendor(enum.Enum):
+class Vendor(enum.StrEnum):
     PPC = "PPC"
     Theben = "Theben"
     EMH = "EMH"

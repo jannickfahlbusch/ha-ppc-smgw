@@ -15,10 +15,8 @@ from custom_components.ppc_smgw.gateways.gateway import Gateway
 from custom_components.ppc_smgw.gateways.ppc.const import (
     DEFAULT_MODEL,
     DEFAULT_NAME,
-    DEFAULT_USE_LIBRARY,
     MANUFACTURER,
 )
-from custom_components.ppc_smgw.gateways.ppc.ppcsmgw.ppc_smgw import PPCSmgw
 from custom_components.ppc_smgw.gateways.reading import (
     Information,
     Reading,
@@ -38,22 +36,10 @@ class PPC_SMGW(Gateway):
         websession: httpx.AsyncClient,
         logger: logging.Logger,
         debug: bool = False,
-        use_library: bool = DEFAULT_USE_LIBRARY,
     ) -> None:
         super().__init__(host, username, password, websession, logger, debug)
 
-        # Feature toggle flag: route through the py-ppc-smgw library instead of the
-        # built-in client. Default uses the py-ppc-smgw library.
-        self.use_library = use_library
-        self.dynamic_obis_discovery_enabled = use_library
-
-        self.ppc_smgw_client = PPCSmgw(
-            host=host,
-            username=username,
-            password=password,
-            httpx_client=websession,
-            logger=logger,
-        )
+        self.dynamic_obis_discovery_enabled = True
 
     async def get_data(self) -> Information:
         self.logger.info("Fetching data from Gateway")
@@ -65,16 +51,13 @@ class PPC_SMGW(Gateway):
             # We should emulate this here to avoid timing issues
             await asyncio.sleep(15)
             self.data = build_fake_information()
-        elif self.use_library:
-            self.logger.debug("Using py-ppc-smgw library for data fetching")
-            self.data = await self._get_data_via_library()
         else:
-            self.logger.debug("Using legacy in-tree PPC client")
-            self.data = await self.ppc_smgw_client.get_data()
+            self.logger.debug("Using py-ppc-smgw library for data fetching")
+            self.data = await self._get_data()
 
         return self.data
 
-    async def _get_data_via_library(self) -> Information:
+    async def _get_data(self) -> Information:
         """Fetch data through the py-ppc-smgw library.
 
         Reads only the first meter to keep parity with the built-in client.
@@ -152,14 +135,11 @@ class PPC_SMGW(Gateway):
         """Reboot the gateway."""
         self.logger.info("Rebooting Gateway")
 
-        if self.use_library:
-            async with PPCSMGWClient(
-                host=self.host,
-                username=self.username,
-                password=self.password,
-                httpx_client=self.websession,
-                logger=self.logger,
-            ) as client:
-                return await client.reboot()
-
-        return await self.ppc_smgw_client.reboot()
+        async with PPCSMGWClient(
+            host=self.host,
+            username=self.username,
+            password=self.password,
+            httpx_client=self.websession,
+            logger=self.logger,
+        ) as client:
+            return await client.reboot()
