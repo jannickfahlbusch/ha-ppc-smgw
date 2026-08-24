@@ -430,6 +430,51 @@
       },
       "firmware_version": {
         "name": "Firmware-Version"
+      },
+      "firmware_version_channel": {
+        "name": "Firmware-Version (Kanal {channel})"
+      },
+      "phase_angle": {
+        "name": "Phasenwinkel"
+      },
+      "phase_angle_channel": {
+        "name": "Phasenwinkel (Kanal {channel})"
+      },
+      "phase_angle_u_l2_l1": {
+        "name": "Phasenwinkel U(L2)-U(L1)"
+      },
+      "phase_angle_u_l2_l1_channel": {
+        "name": "Phasenwinkel U(L2)-U(L1) (Kanal {channel})"
+      },
+      "phase_angle_u_l3_l1": {
+        "name": "Phasenwinkel U(L3)-U(L1)"
+      },
+      "phase_angle_u_l3_l1_channel": {
+        "name": "Phasenwinkel U(L3)-U(L1) (Kanal {channel})"
+      },
+      "phase_angle_l1": {
+        "name": "Phasenwinkel L1"
+      },
+      "phase_angle_l1_channel": {
+        "name": "Phasenwinkel L1 (Kanal {channel})"
+      },
+      "phase_angle_l2": {
+        "name": "Phasenwinkel L2"
+      },
+      "phase_angle_l2_channel": {
+        "name": "Phasenwinkel L2 (Kanal {channel})"
+      },
+      "phase_angle_l3": {
+        "name": "Phasenwinkel L3"
+      },
+      "phase_angle_l3_channel": {
+        "name": "Phasenwinkel L3 (Kanal {channel})"
+      },
+      "meter_identification": {
+        "name": "Zähleridentifikation"
+      },
+      "meter_identification_channel": {
+        "name": "Zähleridentifikation (Kanal {channel})"
       }
     },
     "button": {
