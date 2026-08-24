@@ -430,6 +430,51 @@
       },
       "firmware_version": {
         "name": "Firmware version"
+      },
+      "firmware_version_channel": {
+        "name": "Firmware version (Channel {channel})"
+      },
+      "phase_angle": {
+        "name": "Phase angle"
+      },
+      "phase_angle_channel": {
+        "name": "Phase angle (Channel {channel})"
+      },
+      "phase_angle_u_l2_l1": {
+        "name": "Phase angle U(L2)-U(L1)"
+      },
+      "phase_angle_u_l2_l1_channel": {
+        "name": "Phase angle U(L2)-U(L1) (Channel {channel})"
+      },
+      "phase_angle_u_l3_l1": {
+        "name": "Phase angle U(L3)-U(L1)"
+      },
+      "phase_angle_u_l3_l1_channel": {
+        "name": "Phase angle U(L3)-U(L1) (Channel {channel})"
+      },
+      "phase_angle_l1": {
+        "name": "Phase angle L1"
+      },
+      "phase_angle_l1_channel": {
+        "name": "Phase angle L1 (Channel {channel})"
+      },
+      "phase_angle_l2": {
+        "name": "Phase angle L2"
+      },
+      "phase_angle_l2_channel": {
+        "name": "Phase angle L2 (Channel {channel})"
+      },
+      "phase_angle_l3": {
+        "name": "Phase angle L3"
+      },
+      "phase_angle_l3_channel": {
+        "name": "Phase angle L3 (Channel {channel})"
+      },
+      "meter_identification": {
+        "name": "Meter identification"
+      },
+      "meter_identification_channel": {
+        "name": "Meter identification (Channel {channel})"
       }
     },
     "button": {

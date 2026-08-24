@@ -668,10 +668,19 @@ class TestTranslations:
 
     def test_all_catalog_slugs_and_variants_present(self):
         en = self._entity_sensor(self._TR / "en.json")
-        for info in OBIS_CATALOG.values():
-            for suffix in ("", "_channel", "_tariff", "_channel_tariff"):
-                assert f"{info.translation_key}{suffix}" in en
-        assert "unknown_code" in en
+        missing = []
+        for key, info in OBIS_CATALOG.items():
+            suffixes = ["", "_channel"]
+            if len(key) == 2:
+                suffixes.extend(["_tariff", "_channel_tariff"])
+
+            for suffix in suffixes:
+                translation_key = f"{info.translation_key}{suffix}"
+                if translation_key not in en:
+                    missing.append(translation_key)
+        if "unknown_code" not in en:
+            missing.append("unknown_code")
+        assert not missing, f"Missing translation keys in en.json: {missing}"
 
     def test_template_tokens_are_known(self):
         """Every {token} in a name must be one of channel/tariff/code."""
