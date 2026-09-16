@@ -60,7 +60,6 @@ class EMHCasaClient:
         if self._metadata_probe_done:
             return self._firmware_version
 
-        self._metadata_probe_done = True
         url = f"{self.base_url}/json/systeminformations"
         try:
             response = await self.httpx_client.get(
@@ -76,6 +75,7 @@ class EMHCasaClient:
             firmware_value = response.json().get("firmwareversion")
             if firmware_value:
                 self._firmware_version = str(firmware_value).split("/", 1)[0].strip()
+                self._metadata_probe_done = True
         except Exception as err:
             self.logger.debug("Failed to fetch firmware information: %s", err)
 

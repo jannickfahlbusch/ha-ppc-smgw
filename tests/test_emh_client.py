@@ -209,3 +209,16 @@ class TestGetReadings:
         assert await c._get_firmware_version() == "31100000__X026b"
         assert await c._get_firmware_version() == "31100000__X026b"
         c.httpx_client.get.assert_awaited_once()
+
+    async def test_get_firmware_version_retries_after_failure(self):
+        c = _make_client()
+        c.httpx_client.get = AsyncMock(
+            side_effect=[
+                Exception("timeout"),
+                _make_response({"firmwareversion": "31100000__X026b / hash"}),
+            ]
+        )
+
+        assert await c._get_firmware_version() is None
+        assert await c._get_firmware_version() == "31100000__X026b"
+        assert c.httpx_client.get.await_count == 2
