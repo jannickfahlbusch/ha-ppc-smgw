@@ -27,6 +27,8 @@ class EMHGateway(Gateway):
     ) -> None:
         super().__init__(host, username, password, websession, logger, debug)
 
+        self.dynamic_obis_discovery_enabled = True
+
         self.client = EMHCasaClient(
             base_url=host,
             username=username,
