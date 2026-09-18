@@ -184,6 +184,7 @@ class TestGetReadings:
 
     async def test_get_data_returns_information(self):
         c = _make_client()
+        c._metadata_probe_done = True
         c.httpx_client.get = AsyncMock(
             side_effect=[
                 _make_response([_METER_ID]),
@@ -193,3 +194,31 @@ class TestGetReadings:
         info = await c.get_data()
         assert info.name == "EMH SMGW"
         assert len(info.readings) == 3
+
+    async def test_get_firmware_version_returns_cached_version(self):
+        c = _make_client()
+        c.httpx_client.get = AsyncMock(
+            return_value=_make_response(
+                {
+                    "firmwareversion": "31100000__X026b / ef5018df6ece2958",
+                    "huid": "eemh0015535256",
+                }
+            )
+        )
+
+        assert await c._get_firmware_version() == "31100000__X026b"
+        assert await c._get_firmware_version() == "31100000__X026b"
+        c.httpx_client.get.assert_awaited_once()
+
+    async def test_get_firmware_version_retries_after_failure(self):
+        c = _make_client()
+        c.httpx_client.get = AsyncMock(
+            side_effect=[
+                Exception("timeout"),
+                _make_response({"firmwareversion": "31100000__X026b / hash"}),
+            ]
+        )
+
+        assert await c._get_firmware_version() is None
+        assert await c._get_firmware_version() == "31100000__X026b"
+        assert c.httpx_client.get.await_count == 2

@@ -31,6 +31,8 @@ class EMHCasaClient:
 
         self.httpx_client = httpx_client
         self.logger = logger
+        self._metadata_probe_done = False
+        self._firmware_version: str | None = None
 
         self.httpx_client.headers.setdefault("Content-Type", "application/json")
         self.httpx_client.follow_redirects = True
@@ -39,11 +41,12 @@ class EMHCasaClient:
         return httpx.DigestAuth(self.username, self.password)
 
     async def get_data(self) -> Information:
+        firmware_version = await self._get_firmware_version()
         information = Information(
             name=DEFAULT_NAME,
             model=DEFAULT_MODEL,
             manufacturer=MANUFACTURER,
-            firmware_version="Unknown",
+            firmware_version=firmware_version or "Unknown",
             last_update=datetime.now(UTC),
             readings=await self._get_readings(),
         )
@@ -51,6 +54,32 @@ class EMHCasaClient:
         self.logger.debug(f"Returning information: {information}")
 
         return information
+
+    async def _get_firmware_version(self) -> str | None:
+        """Read and cache the EMH firmware version."""
+        if self._metadata_probe_done:
+            return self._firmware_version
+
+        url = f"{self.base_url}/json/systeminformations"
+        try:
+            response = await self.httpx_client.get(
+                url,
+                auth=self._get_auth(),
+                timeout=10,
+            )
+            self.logger.debug(
+                "Got firmware information: \nStatus code: %s\nRaw response: %s",
+                response.status_code,
+                response.text,
+            )
+            firmware_value = response.json().get("firmwareversion")
+            if firmware_value:
+                self._firmware_version = str(firmware_value).split("/", 1)[0].strip()
+                self._metadata_probe_done = True
+        except Exception as err:
+            self.logger.debug("Failed to fetch firmware information: %s", err)
+
+        return self._firmware_version
 
     async def discover_all_meter_ids(self) -> list[str]:
         """Return all meter IDs available on this gateway via /json/metering/origin/."""
