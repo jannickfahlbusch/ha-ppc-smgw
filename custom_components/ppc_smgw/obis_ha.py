@@ -15,6 +15,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.const import (
+    SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     UnitOfApparentPower,
     UnitOfElectricCurrent,
     UnitOfElectricPotential,
@@ -25,7 +26,7 @@ from homeassistant.const import (
     UnitOfReactivePower,
 )
 from homeassistant.helpers.entity import EntityCategory
-from obis_parser import OBIS
+from obis_parser import OBIS, OBISMeasurementInfo
 
 _DEVICE_CLASS_MAP = {
     "current": SensorDeviceClass.CURRENT,
@@ -37,6 +38,7 @@ _DEVICE_CLASS_MAP = {
     "apparent_power": SensorDeviceClass.APPARENT_POWER,
     "power_factor": SensorDeviceClass.POWER_FACTOR,
     "frequency": SensorDeviceClass.FREQUENCY,
+    "signal_strength": SensorDeviceClass.SIGNAL_STRENGTH,
 }
 
 _STATE_CLASS_MAP = {
@@ -54,7 +56,12 @@ _UNIT_MAP = {
     "VA": UnitOfApparentPower.VOLT_AMPERE,
     "Hz": UnitOfFrequency.HERTZ,
     # "kVAh" intentionally omitted — no HA constant; passed through as a raw string.
+    "dBm": SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
 }
+
+_DIAGNOSTIC_DEVICE_CLASSES = [
+    "signal_strength",
+]
 
 
 @dataclass
@@ -112,7 +119,18 @@ def build_obis_sensor_description(key: str) -> OBISSensorSpec:
             icon=info.icon,
             device_class=_DEVICE_CLASS_MAP.get(info.device_class),
             state_class=_STATE_CLASS_MAP.get(info.state_class),
+            entity_category=_get_entity_category(info),
         ),
         translation_key=descriptor.translation_key,
         translation_placeholders=descriptor.placeholders,
     )
+
+
+def _get_entity_category(info: OBISMeasurementInfo) -> EntityCategory | None:
+    if info.device_class is None:
+        return None
+
+    if info.device_class in _DIAGNOSTIC_DEVICE_CLASSES:
+        return EntityCategory.DIAGNOSTIC
+
+    return None
