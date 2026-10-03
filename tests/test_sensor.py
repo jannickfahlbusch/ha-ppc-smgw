@@ -669,8 +669,11 @@ class TestTranslations:
     def test_all_catalog_slugs_and_variants_present(self):
         en = self._entity_sensor(self._TR / "en.json")
         missing = []
+        no_channel_registers = {"rssi", "firmware_version"}
         for key, info in OBIS_CATALOG.items():
-            suffixes = ["", "_channel"]
+            suffixes = [""]
+            if info.translation_key not in no_channel_registers:
+                suffixes.append("_channel")
             if len(key) == 2:
                 suffixes.extend(["_tariff", "_channel_tariff"])
 

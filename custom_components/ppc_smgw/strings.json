@@ -431,9 +431,6 @@
       "firmware_version": {
         "name": "Firmware version"
       },
-      "firmware_version_channel": {
-        "name": "Firmware version (Channel {channel})"
-      },
       "phase_angle": {
         "name": "Phase angle"
       },
@@ -475,6 +472,9 @@
       },
       "meter_identification_channel": {
         "name": "Meter identification (Channel {channel})"
+      },
+      "rssi": {
+        "name": "RSSI"
       }
     },
     "button": {

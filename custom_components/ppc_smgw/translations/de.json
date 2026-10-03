@@ -431,9 +431,6 @@
       "firmware_version": {
         "name": "Firmware-Version"
       },
-      "firmware_version_channel": {
-        "name": "Firmware-Version (Kanal {channel})"
-      },
       "phase_angle": {
         "name": "Phasenwinkel"
       },
@@ -475,6 +472,9 @@
       },
       "meter_identification_channel": {
         "name": "Zähleridentifikation (Kanal {channel})"
+      },
+      "rssi": {
+        "name": "Signalstärke (RSSI)"
       }
     },
     "button": {
