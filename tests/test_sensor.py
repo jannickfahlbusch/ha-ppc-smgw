@@ -19,7 +19,9 @@ from custom_components.ppc_smgw.const import (
 )
 from custom_components.ppc_smgw.coordinator import Data
 from custom_components.ppc_smgw.gateways.reading import Information, Reading
-from custom_components.ppc_smgw.obis_ha import OBISSensorSpec
+from custom_components.ppc_smgw.obis_ha import (
+    OBISSensorSpec,
+)
 from custom_components.ppc_smgw.sensor import (
     FirmwareSensor,
     LastUpdatedSensor,
@@ -210,7 +212,10 @@ class TestSensorPlatformSetup:
         """Dynamic discovery starts from delivered readings, not SENSOR_TYPES."""
         mock_coordinator = MagicMock()
         mock_coordinator.data = _information(
-            {"1-0:1.8.0": _reading("1234.5", "1-0:1.8.0")}
+            {
+                "1-0:1.8.0": _reading("1234.5", "1-0:1.8.0"),
+                "0-0:96.99.0": _reading("-50", "0-0:96.99.0"),
+            }
         )
         mock_coordinator.async_add_listener = MagicMock(return_value=MagicMock())
         mock_add_entities = MagicMock()
@@ -228,10 +233,16 @@ class TestSensorPlatformSetup:
         ]
 
         assert [sensor.entity_description.key for sensor in obis_sensors] == [
-            "1-0:1.8.0"
+            "1-0:1.8.0",
+            "0-0:96.99.0",
         ]
         assert len(last_update_sensors) == 1
         assert obis_sensors[0]._attr_translation_key == "active_energy_import"
+        assert obis_sensors[1]._attr_translation_key == "rssi"
+        assert (
+            obis_sensors[1].entity_description.entity_category
+            == EntityCategory.DIAGNOSTIC
+        )
         mock_coordinator.async_add_listener.assert_called_once()
         entry.async_on_unload.assert_called_once()
 
@@ -669,8 +680,11 @@ class TestTranslations:
     def test_all_catalog_slugs_and_variants_present(self):
         en = self._entity_sensor(self._TR / "en.json")
         missing = []
+        no_channel_registers = {"rssi", "firmware_version"}
         for key, info in OBIS_CATALOG.items():
-            suffixes = ["", "_channel"]
+            suffixes = [""]
+            if info.translation_key not in no_channel_registers:
+                suffixes.append("_channel")
             if len(key) == 2:
                 suffixes.extend(["_tariff", "_channel_tariff"])
 

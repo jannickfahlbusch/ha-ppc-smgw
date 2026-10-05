@@ -115,9 +115,9 @@ def _build_dynamic_obis_sensors(
 
         known_obis_codes.add(key)
 
-        if not obis_obj.is_electricity:
+        if not (obis_obj.is_electricity or obis_obj.is_abstract):
             _LOGGER.info(
-                "Skipping non-electricity OBIS code %s (medium A=%s); "
+                "Skipping unsupported OBIS code %s (medium A=%s); "
                 "sub-metered gas/heat/water is not supported",
                 key,
                 obis_obj.a,
