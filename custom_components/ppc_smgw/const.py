@@ -13,7 +13,7 @@ DEFAULT_PASSWORD = ""
 DEFAULT_SCAN_INTERVAL = 5
 DEFAULT_DEBUG = False
 
-REPO_URL = "https://github.com/jannickfahlbusch/ha-ppc-smgw"
+REPO_URL = "https://pkg.jf-projects.de/ha-ppc-smgw"
 
 CONF_METER_TYPE = "meter_type"
 
