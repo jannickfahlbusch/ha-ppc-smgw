@@ -60,7 +60,11 @@ class PPC_SMGW(Gateway):
     async def _get_data(self) -> Information:
         """Fetch data through the py-ppc-smgw library.
 
-        Reads only the first meter to keep parity with the built-in client.
+        Reads all meters (tariff/meter profiles) exposed by the gateway and
+        merges their OBIS readings. Some gateways expose import (1.8.0) and
+        export (2.8.0) as separate meter entries, so reading only the first
+        one silently drops values. If the same OBIS code is reported by more
+        than one meter, the first occurrence wins and a warning is logged.
         The firmware string is reconstructed in the built-in client's
         "<bootstream>-<services>" format so the device info stays identical.
         """
@@ -75,9 +79,17 @@ class PPC_SMGW(Gateway):
             last_ts: datetime | None = None
 
             meters: list[Meter] = await client.get_meters()
-            if meters:
-                meter_readings = await client.get_meter_reading(meters[0])
+            for meter in meters:
+                meter_readings = await client.get_meter_reading(meter)
                 for obis, reading in meter_readings.items():
+                    if obis in readings:
+                        self.logger.warning(
+                            "OBIS %s reported by more than one meter, "
+                            "keeping the first value (ignored meter %s)",
+                            obis,
+                            meter.mid,
+                        )
+                        continue
                     ts = self._as_aware(reading.timestamp)
                     readings[obis] = Reading(
                         value=self._coerce_reading_value(reading.value),

@@ -96,8 +96,64 @@ class TestPPCAdapterDataPath:
         assert all(isinstance(k, OBIS) for k in result.readings)
         # last_update is the newest reading timestamp.
         assert result.last_update == adapter._as_aware(naive)
-        # Only the first meter is read (parity with built-in client).
+        # The single meter is read exactly once.
         factory.client.get_meter_reading.assert_awaited_once()
+
+    async def test_adapter_reads_all_meters(self):
+        """Import and export on separate meters are both returned."""
+        adapter = _make_adapter()
+
+        ts = datetime(2024, 12, 20, 16, 0, 1)
+        import_readings = {
+            OBIS(1, 0, 1, 8, 0): LibReading(
+                value="724.9204", timestamp=ts, obis=OBIS(1, 0, 1, 8, 0)
+            ),
+        }
+        export_readings = {
+            OBIS(1, 0, 2, 8, 0): LibReading(
+                value="3.0557", timestamp=ts, obis=OBIS(1, 0, 2, 8, 0)
+            ),
+        }
+        factory = _library_client_mock(
+            meters=[Meter(mid="m1", name="import"), Meter(mid="m2", name="export")],
+            firmware=[],
+        )
+        factory.client.get_meter_reading = AsyncMock(
+            side_effect=[import_readings, export_readings]
+        )
+
+        with patch(f"{_ADAPTER}.PPCSMGWClient", factory):
+            result = await adapter.get_data()
+
+        assert result.readings[OBIS(1, 0, 1, 8, 0)].value == 724.9204
+        assert result.readings[OBIS(1, 0, 2, 8, 0)].value == 3.0557
+        assert factory.client.get_meter_reading.await_count == 2
+
+    async def test_adapter_duplicate_obis_keeps_first(self):
+        """The same OBIS on two meters keeps the first value."""
+        adapter = _make_adapter()
+
+        ts = datetime(2024, 12, 20, 16, 0, 1)
+        first = {
+            OBIS(1, 0, 1, 8, 0): LibReading(
+                value="1.0", timestamp=ts, obis=OBIS(1, 0, 1, 8, 0)
+            ),
+        }
+        second = {
+            OBIS(1, 0, 1, 8, 0): LibReading(
+                value="2.0", timestamp=ts, obis=OBIS(1, 0, 1, 8, 0)
+            ),
+        }
+        factory = _library_client_mock(
+            meters=[Meter(mid="m1", name="a"), Meter(mid="m2", name="b")],
+            firmware=[],
+        )
+        factory.client.get_meter_reading = AsyncMock(side_effect=[first, second])
+
+        with patch(f"{_ADAPTER}.PPCSMGWClient", factory):
+            result = await adapter.get_data()
+
+        assert result.readings[OBIS(1, 0, 1, 8, 0)].value == 1.0
 
     async def test_adapter_no_meters_gives_empty_readings(self):
         """No meters → empty readings and a tz-aware now() fallback."""
