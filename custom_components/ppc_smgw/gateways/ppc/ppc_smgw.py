@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime
 import logging
+import time
 
 from homeassistant.util.dt import now
 import httpx
@@ -16,6 +17,8 @@ from custom_components.ppc_smgw.gateways.ppc.const import (
     DEFAULT_MODEL,
     DEFAULT_NAME,
     MANUFACTURER,
+    MAX_METERS_PER_POLL,
+    METER_READ_TIME_BUDGET,
 )
 from custom_components.ppc_smgw.gateways.reading import (
     Information,
@@ -65,6 +68,12 @@ class PPC_SMGW(Gateway):
         export (2.8.0) as separate meter entries, so reading only the first
         one silently drops values. If the same OBIS code is reported by more
         than one meter, the first occurrence wins and a warning is logged.
+
+        At most MAX_METERS_PER_POLL meters are read per poll, within a total
+        budget of METER_READ_TIME_BUDGET seconds, to bound the request load on
+        the gateway. A failing meter is logged and skipped so readings from the
+        other meters are still returned; only if every meter fails is the last
+        error raised, so the coordinator keeps its usual failure handling.
         The firmware string is reconstructed in the built-in client's
         "<bootstream>-<services>" format so the device info stays identical.
         """
@@ -79,9 +88,35 @@ class PPC_SMGW(Gateway):
             last_ts: datetime | None = None
 
             meters: list[Meter] = await client.get_meters()
+            if len(meters) > MAX_METERS_PER_POLL:
+                self.logger.warning(
+                    "Gateway reports %d meters, reading only the first %d",
+                    len(meters),
+                    MAX_METERS_PER_POLL,
+                )
+                meters = meters[:MAX_METERS_PER_POLL]
+
+            deadline = time.monotonic() + METER_READ_TIME_BUDGET
+            last_error: Exception | None = None
+            read_ok = 0
             for meter in meters:
-                meter_readings = await client.get_meter_reading(meter)
+                if time.monotonic() > deadline:
+                    self.logger.warning(
+                        "Meter read time budget of %ss exceeded, skipping remaining meters",
+                        METER_READ_TIME_BUDGET,
+                    )
+                    break
+                try:
+                    meter_readings = await client.get_meter_reading(meter)
+                except Exception as err:  # one meter must not break the others
+                    self.logger.warning("Reading meter %s failed: %s", meter.mid, err)
+                    last_error = err
+                    continue
+                read_ok += 1
                 for obis, reading in meter_readings.items():
+                    ts = self._as_aware(reading.timestamp)
+                    if ts is not None and (last_ts is None or ts > last_ts):
+                        last_ts = ts
                     if obis in readings:
                         self.logger.warning(
                             "OBIS %s reported by more than one meter, "
@@ -90,14 +125,14 @@ class PPC_SMGW(Gateway):
                             meter.mid,
                         )
                         continue
-                    ts = self._as_aware(reading.timestamp)
                     readings[obis] = Reading(
                         value=self._coerce_reading_value(reading.value),
                         timestamp=ts,
                         obis=obis,
                     )
-                    if ts is not None and (last_ts is None or ts > last_ts):
-                        last_ts = ts
+
+            if read_ok == 0 and last_error is not None:
+                raise last_error
 
             firmware = self._construct_firmware_version(
                 await client.get_firmware_versions()
