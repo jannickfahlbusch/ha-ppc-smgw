@@ -39,6 +39,11 @@ def _make_client(base_url="https://192.168.0.1", username="user", password="pass
     )
 
 
+def _usage_point_info(**scalers):
+    channels = [{"obis": o, "scaler": sc, "unit": "30"} for o, sc in scalers.items()]
+    return {"usage-point-info": {"databases": [{"channels": channels}]}}
+
+
 # ---------------------------------------------------------------------------
 # ThebenMD5DigestAuth tests
 # ---------------------------------------------------------------------------
@@ -206,6 +211,9 @@ class TestThebenConexaClient:
         client.httpx_client.post = AsyncMock(
             side_effect=[
                 _make_response(mock_user_info),
+                _make_response(
+                    _usage_point_info(**{"0100010800ff": "-1", "0100020800ff": "-1"})
+                ),
                 _make_response(mock_readings),
             ]
         )
@@ -257,9 +265,54 @@ class TestThebenConexaClient:
         client.httpx_client.post = AsyncMock(
             side_effect=[
                 _make_response(mock_user_info),
+                _make_response(
+                    _usage_point_info(**{"0100010800ff": "-1", "0100020800ff": "-1"})
+                ),
                 _make_response(mock_readings),
             ]
         )
         readings = await client._get_readings()
         assert len(readings) == 1
         assert OBIS(1, 0, 1, 8, 0, 255) in readings
+
+    async def test_get_readings_applies_scaler_and_caches_it(self):
+        client = _make_client()
+        user_info = {
+            "user-info": {
+                "usage-points": [
+                    {
+                        "usage-point-id": "UP001",
+                        "taf-state": "running",
+                        "taf-number": "7",
+                    }
+                ]
+            }
+        }
+        readings = {
+            "readings": {
+                "channels": [
+                    {
+                        "obis": "0100010800ff.0551010038180402.sm",
+                        "readings": [
+                            {
+                                "value": "1337420000",
+                                "capture-time": "2026-08-14T12:00:00Z",
+                            }
+                        ],
+                    }
+                ]
+            }
+        }
+        client.httpx_client.post = AsyncMock(
+            side_effect=[
+                _make_response(user_info),
+                _make_response(_usage_point_info(**{"0100010800ff": "-3"})),
+                _make_response(readings),
+                _make_response(user_info),
+                _make_response(readings),
+            ]
+        )
+        for _ in range(2):
+            result = await client._get_readings()
+            assert result[OBIS(1, 0, 1, 8, 0, 255)].value == pytest.approx(1337.42)
+        assert client.httpx_client.post.call_count == 5
