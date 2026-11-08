@@ -40,6 +40,7 @@ class ThebenConexaClient:
 
         self.httpx_client = httpx_client
         self.logger = logger
+        self._scalers: dict[str, dict[OBIS, int]] = {}
 
         self.httpx_client.headers.setdefault("Content-Type", "application/json")
         self.httpx_client.follow_redirects = True
@@ -103,6 +104,28 @@ class ThebenConexaClient:
         )
         return usage_point_ids
 
+    # Read the scaler of each channel (spec A-2.4) and cache them.
+    async def _get_scalers(self, usage_point_id: str) -> dict[OBIS, int]:
+        if usage_point_id not in self._scalers:
+            response = await self.httpx_client.post(
+                self.base_url,
+                auth=self._get_auth(),
+                timeout=10,
+                json={
+                    "method": "usage-point-info",
+                    "usage-point-id": usage_point_id,
+                    "database": "origin",
+                },
+            )
+            self.logger.debug(f"Got usage point info: {response.text}")
+            self._scalers[usage_point_id] = {
+                OBIS.parse(channel["obis"]): int(channel["scaler"])
+                for database in response.json()["usage-point-info"]["databases"]
+                for channel in database["channels"]
+            }
+
+        return self._scalers[usage_point_id]
+
     async def _get_readings(self) -> dict[OBIS, Reading]:
         self.logger.debug(f"Getting readings from {self.base_url}")
 
@@ -114,6 +137,7 @@ class ThebenConexaClient:
         readings: dict[OBIS, Reading] = {}
 
         for id in usage_point_ids:
+            scalers = await self._get_scalers(id)
             try:
                 response = await self.httpx_client.post(
                     self.base_url,
@@ -146,13 +170,15 @@ class ThebenConexaClient:
                 if obis_obj is None:
                     self.logger.error(f"No or unknown OBIS code: {channel.get('obis')}")
                     continue
+                if obis_obj not in scalers:
+                    self.logger.error(f"No scaler for channel {channel['obis']}")
+                    continue
 
                 # So far, this logic only supports one reading per channel at once
                 reading = ch_readings[0]
                 readings[obis_obj] = Reading(
-                    value=(
-                        float(reading["value"]) / 10000
-                    ),  # Watts of value? deciWatts!
+                    # value * 10^scaler is in Wh (unit 30), Home Assistant uses kWh
+                    value=float(reading["value"]) / 10 ** (3 - scalers[obis_obj]),
                     timestamp=reading["capture-time"],
                     obis=obis_obj,
                 )
