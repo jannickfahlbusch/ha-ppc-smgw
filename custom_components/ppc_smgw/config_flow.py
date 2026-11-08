@@ -20,7 +20,7 @@ from homeassistant.helpers.selector import (
     TextSelectorConfig,
     TextSelectorType,
 )
-import voluptuous as vol
+from probatio import In, Optional, Required, Schema, Secret
 
 from .const import (
     CONF_METER_TYPE,
@@ -37,9 +37,9 @@ from .gateways.vendors import Vendor
 
 _LOGGER = logging.getLogger(__name__)
 
-SCHEMA_VENDOR = vol.Schema(
+SCHEMA_VENDOR = Schema(
     {
-        vol.Required(CONF_METER_TYPE): vol.In(Vendor.__members__),
+        Required(CONF_METER_TYPE): In(Vendor.__members__),
     }
 )
 
@@ -53,7 +53,7 @@ def build_username_password_schema(
     default_debug: bool = False,
     optional_password: bool = False,
     default_meter_id: str | None = None,
-) -> vol.Schema:
+) -> Schema:
     """Build a schema for username/password configuration.
 
     Args:
@@ -67,7 +67,7 @@ def build_username_password_schema(
         default_meter_id: If not None, include an optional meter_id field (EMH only).
 
     Returns:
-        A voluptuous Schema for the configuration form.
+        A probatio Schema for the configuration form.
     """
     password_selector = TextSelector(
         TextSelectorConfig(
@@ -75,25 +75,25 @@ def build_username_password_schema(
         )
     )
     if optional_password:
-        password_key = vol.Optional(CONF_PASSWORD, default="")
+        password_key = Optional(Secret(CONF_PASSWORD), default="")
     else:
-        password_key = vol.Required(CONF_PASSWORD)
+        password_key = Required(Secret(CONF_PASSWORD))
 
     schema = {
-        vol.Required(CONF_NAME, default=default_name): str,
-        vol.Required(CONF_HOST, default=default_url): str,
-        vol.Required(CONF_USERNAME, default=default_username): str,
+        Required(CONF_NAME, default=default_name): str,
+        Required(CONF_HOST, default=default_url): str,
+        Required(CONF_USERNAME, default=default_username): str,
         password_key: password_selector,
-        vol.Required(CONF_SCAN_INTERVAL, default=default_scan_interval): int,
+        Required(CONF_SCAN_INTERVAL, default=default_scan_interval): int,
     }
 
     if allow_debugging:
-        schema[vol.Optional(CONF_DEBUG, default=default_debug)] = bool
+        schema[Optional(CONF_DEBUG, default=default_debug)] = bool
 
     if default_meter_id is not None:
-        schema[vol.Optional(emh_const.CONF_METER_ID, default=default_meter_id)] = str
+        schema[Optional(emh_const.CONF_METER_ID, default=default_meter_id)] = str
 
-    return vol.Schema(schema)
+    return Schema(schema)
 
 
 def _host_username_combination_exists(
@@ -301,9 +301,9 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="emh_meter_select",
-            data_schema=vol.Schema(
+            data_schema=Schema(
                 {
-                    vol.Optional(emh_const.CONF_METER_ID, default=""): SelectSelector(
+                    Optional(emh_const.CONF_METER_ID, default=""): SelectSelector(
                         SelectSelectorConfig(options=options)
                     )
                 }
@@ -368,11 +368,11 @@ class PPCSMGWLocalOptionsFlowHandler(config_entries.OptionsFlow):
             description_placeholders={"repo_url": REPO_URL},
         )
 
-    def _build_options_schema(self) -> vol.Schema:
+    def _build_options_schema(self) -> Schema:
         """Build the options schema with current values as defaults.
 
         Returns:
-            A voluptuous Schema populated with current configuration values.
+            A probatio Schema populated with current configuration values.
         """
         vendor = self.data.get(CONF_METER_TYPE)
 

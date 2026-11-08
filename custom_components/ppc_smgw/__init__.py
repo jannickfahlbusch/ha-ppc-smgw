@@ -13,7 +13,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.httpx_client import create_async_httpx_client
 from homeassistant.loader import async_get_loaded_integration
-import voluptuous as vol
 
 from custom_components.ppc_smgw.gateways.emh.emh import EMHGateway
 from custom_components.ppc_smgw.gateways.gateway import Gateway
@@ -24,13 +23,11 @@ from custom_components.ppc_smgw.gateways.vendors import Vendor
 from .const import (
     CONF_METER_TYPE,
     DEFAULT_SCAN_INTERVAL,
-    DOMAIN,
 )
 from .coordinator import ConfigEntry, Data, SMGwDataUpdateCoordinator
 from .gateways.emh.const import CONF_METER_ID as EMH_CONF_METER_ID
 
 _LOGGER = logging.getLogger(__name__)
-CONFIG_SCHEMA = vol.Schema({DOMAIN: vol.Schema({})}, extra=vol.ALLOW_EXTRA)
 
 PLATFORMS: list[Platform] = [
     Platform.BUTTON,
