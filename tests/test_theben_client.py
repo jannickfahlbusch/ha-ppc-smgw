@@ -11,6 +11,7 @@ from custom_components.ppc_smgw.gateways.theben.conexa.conexa import (
     ThebenConexaClient,
     ThebenMD5DigestAuth,
 )
+from custom_components.ppc_smgw.gateways.theben.theben import ThebenConexa
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -40,7 +41,13 @@ def _make_client(base_url="https://192.168.0.1", username="user", password="pass
 
 
 def _usage_point_info(**scalers):
-    channels = [{"obis": o, "scaler": sc, "unit": "30"} for o, sc in scalers.items()]
+    channels = []
+    for o, val in scalers.items():
+        if isinstance(val, tuple):
+            sc, unit = val
+        else:
+            sc, unit = val, "30"
+        channels.append({"obis": o, "scaler": sc, "unit": unit})
     return {"usage-point-info": {"databases": [{"channels": channels}]}}
 
 
@@ -316,3 +323,218 @@ class TestThebenConexaClient:
             result = await client._get_readings()
             assert result[OBIS(1, 0, 1, 8, 0, 255)].value == pytest.approx(1337.42)
         assert client.httpx_client.post.call_count == 5
+
+    async def test_get_readings_scales_power_voltage_and_reactive_registers(self):
+        client = _make_client()
+        mock_user_info = {
+            "user-info": {
+                "usage-points": [
+                    {
+                        "usage-point-id": "UP001",
+                        "taf-state": "running",
+                        "taf-number": "7",
+                    }
+                ]
+            }
+        }
+        mock_readings = {
+            "readings": {
+                "channels": [
+                    {
+                        # 1-0:1.8.0*255 - active energy import (Wh -> kWh)
+                        "obis": "0100010800ff",
+                        "readings": [
+                            {
+                                "value": "12345678",
+                                "capture-time": "2026-08-14T12:00:00Z",
+                            }
+                        ],
+                    },
+                    {
+                        # 1-0:16.7.0*255 - active power total (W)
+                        "obis": "0100100700ff",
+                        "readings": [
+                            {
+                                "value": "450",
+                                "capture-time": "2026-08-14T12:00:00Z",
+                            }
+                        ],
+                    },
+                    {
+                        # 1-0:3.8.0*255 - reactive energy import (varh -> kvarh)
+                        "obis": "0100030800ff",
+                        "readings": [
+                            {
+                                "value": "100000",
+                                "capture-time": "2026-08-14T12:00:00Z",
+                            }
+                        ],
+                    },
+                    {
+                        # 1-0:32.7.0*255 - voltage L1 (0.1 V -> V)
+                        "obis": "0100200700ff",
+                        "readings": [
+                            {
+                                "value": "2301",
+                                "capture-time": "2026-08-14T12:00:00Z",
+                            }
+                        ],
+                    },
+                ]
+            }
+        }
+        client.httpx_client.post = AsyncMock(
+            side_effect=[
+                _make_response(mock_user_info),
+                _make_response(
+                    _usage_point_info(
+                        **{
+                            "0100010800ff": ("-1", "30"),
+                            "0100100700ff": ("0", "27"),
+                            "0100030800ff": ("-1", "32"),
+                            "0100200700ff": ("-1", "35"),
+                        }
+                    )
+                ),
+                _make_response(mock_readings),
+            ]
+        )
+        readings = await client._get_readings()
+        assert readings[OBIS(1, 0, 1, 8, 0, 255)].value == pytest.approx(1234.5678)
+        assert readings[OBIS(1, 0, 16, 7, 0, 255)].value == pytest.approx(450.0)
+        assert readings[OBIS(1, 0, 3, 8, 0, 255)].value == pytest.approx(10.0)
+        assert readings[OBIS(1, 0, 32, 7, 0, 255)].value == pytest.approx(230.1)
+
+    async def test_get_readings_skips_empty_readings(self):
+        client = _make_client()
+        mock_user_info = {
+            "user-info": {
+                "usage-points": [
+                    {
+                        "usage-point-id": "UP001",
+                        "taf-state": "running",
+                        "taf-number": "7",
+                    }
+                ]
+            }
+        }
+        mock_readings = {
+            "readings": {
+                "channels": [
+                    {"obis": "0100010800ff", "readings": []},
+                    {
+                        "obis": "0100020800ff",
+                        "readings": [
+                            {
+                                "value": "10000",
+                                "capture-time": "2026-08-14T12:00:00Z",
+                            }
+                        ],
+                    },
+                ]
+            }
+        }
+        client.httpx_client.post = AsyncMock(
+            side_effect=[
+                _make_response(mock_user_info),
+                _make_response(
+                    _usage_point_info(**{"0100010800ff": "-1", "0100020800ff": "-1"})
+                ),
+                _make_response(mock_readings),
+            ]
+        )
+        readings = await client._get_readings()
+        assert len(readings) == 1
+        assert readings[OBIS(1, 0, 2, 8, 0, 255)].value == pytest.approx(1.0)
+
+    async def test_get_scalers_retries_after_failure(self):
+        client = _make_client()
+        user_info = {
+            "user-info": {
+                "usage-points": [
+                    {
+                        "usage-point-id": "UP001",
+                        "taf-state": "running",
+                        "taf-number": "7",
+                    }
+                ]
+            }
+        }
+        readings = {
+            "readings": {
+                "channels": [
+                    {
+                        "obis": "0100010800ff",
+                        "readings": [
+                            {
+                                "value": "10000",
+                                "capture-time": "2026-08-14T12:00:00Z",
+                            }
+                        ],
+                    }
+                ]
+            }
+        }
+        client.httpx_client.post = AsyncMock(
+            side_effect=[
+                _make_response(user_info),
+                httpx.ConnectError("connection failed"),
+                _make_response(readings),
+                _make_response(user_info),
+                _make_response(_usage_point_info(**{"0100010800ff": "-1"})),
+                _make_response(readings),
+            ]
+        )
+        assert await client._get_readings() == {}
+        result = await client._get_readings()
+        assert result[OBIS(1, 0, 1, 8, 0, 255)].value == pytest.approx(1.0)
+
+
+# ---------------------------------------------------------------------------
+# ThebenConexa Gateway tests
+# ---------------------------------------------------------------------------
+
+
+class TestThebenConexaGateway:
+    def test_dynamic_obis_discovery_activated(self):
+        logger = logging.getLogger("test")
+        gateway = ThebenConexa(
+            host="https://192.168.0.1",
+            username="user",
+            password="pass",
+            websession=MagicMock(spec=httpx.AsyncClient),
+            logger=logger,
+        )
+        assert gateway.dynamic_obis_discovery_enabled is True
+
+    async def test_get_data_debug_mode(self, monkeypatch):
+        logger = logging.getLogger("test")
+        gateway = ThebenConexa(
+            host="https://192.168.0.1",
+            username="user",
+            password="pass",
+            websession=MagicMock(spec=httpx.AsyncClient),
+            logger=logger,
+            debug=True,
+        )
+        monkeypatch.setattr("asyncio.sleep", AsyncMock())
+        data = await gateway.get_data()
+        assert data is not None
+        assert len(data.readings) > 2
+        assert OBIS(1, 0, 1, 8, 0) in data.readings
+        assert OBIS(1, 0, 16, 7, 0) in data.readings
+
+    async def test_get_data_live_mode(self):
+        logger = logging.getLogger("test")
+        gateway = ThebenConexa(
+            host="https://192.168.0.1",
+            username="user",
+            password="pass",
+            websession=MagicMock(spec=httpx.AsyncClient),
+            logger=logger,
+            debug=False,
+        )
+        gateway.client.get_data = AsyncMock(return_value="mock_data")
+        data = await gateway.get_data()
+        assert data == "mock_data"
+        gateway.client.get_data.assert_awaited_once()

@@ -5,7 +5,10 @@ import httpx
 import urllib3
 
 from custom_components.ppc_smgw.gateways.gateway import Gateway
-from custom_components.ppc_smgw.gateways.reading import FakeInformation, Information
+from custom_components.ppc_smgw.gateways.reading import (
+    Information,
+    build_fake_information,
+)
 from custom_components.ppc_smgw.gateways.theben.conexa.conexa import (
     ThebenConexaClient,
 )
@@ -26,6 +29,8 @@ class ThebenConexa(Gateway):
     ) -> None:
         super().__init__(host, username, password, websession, logger, debug)
 
+        self.dynamic_obis_discovery_enabled = True
+
         self.client = ThebenConexaClient(
             base_url=host,
             username=username,
@@ -43,7 +48,7 @@ class ThebenConexa(Gateway):
             # It takes around 15 seconds for the GW to respond to all calls
             # We should emulate this here to avoid timing issues
             await asyncio.sleep(15)
-            self.data = FakeInformation
+            self.data = build_fake_information()
         else:
             self.data = await self.client.get_data()
 
