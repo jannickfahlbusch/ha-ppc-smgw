@@ -11,7 +11,7 @@
   "issue_tracker": "https://pkg.jf-projects.de/ha-ppc-smgw/issues",
   "requirements": [
     "beautifulsoup4>=4.13.3",
-    "obis-parser==0.0.4",
+    "obis-parser==0.0.5",
     "py-ppc-smgw==0.2.2"
   ],
   "version": "0.0.27"
