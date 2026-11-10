@@ -140,15 +140,12 @@ class EMHCasaClient:
             if obis_obj is None:
                 continue
 
-            # Scale value and convert Wh (unit 30) to kWh
-            scaler = meter_value.get("scaler", 0)
-            unit = meter_value.get("unit", 0)
-            value = float(meter_value["value"]) * (10**scaler)
-            if unit == 30:
-                value /= 1000
-
             readings[obis_obj] = Reading(
-                value=value,
+                value=obis_obj.scale_value(
+                    meter_value["value"],
+                    meter_value.get("scaler", 0),
+                    meter_value.get("unit"),
+                ),
                 timestamp=now,
                 obis=obis_obj,
             )

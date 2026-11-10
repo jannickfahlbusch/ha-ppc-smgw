@@ -166,6 +166,25 @@ class TestGetReadings:
         readings = await c._get_readings()
         assert readings[OBIS(1, 0, 1, 8, 0, 255)].value == pytest.approx(1234.5678)
 
+    async def test_reactive_energy_converted_from_varh_to_kvarh(self):
+        """value=100000, scaler=-1, unit=32 → 100000 * 0.1 / 1000 = 10.0 kvarh"""
+        c = _make_client()
+        c.meter_id = _METER_ID
+        fixture = {
+            "values": [
+                {
+                    "logical_name": f"0100030800ff.{_METER_ID}.sm",
+                    "scaler": -1,
+                    "signature": "-",
+                    "unit": 32,
+                    "value": "100000",
+                }
+            ]
+        }
+        c.httpx_client.get = AsyncMock(return_value=_make_response(fixture))
+        readings = await c._get_readings()
+        assert readings[OBIS(1, 0, 3, 8, 0, 255)].value == pytest.approx(10.0)
+
     async def test_skips_invalid_logical_name(self):
         c = _make_client()
         c.meter_id = _METER_ID
