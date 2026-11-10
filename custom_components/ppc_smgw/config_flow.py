@@ -141,8 +141,6 @@ class PPC_SMGLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 2
     MINOR_VERSION = 4
 
-    CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
-
     data: dict[str, Any] | None
     _errors: dict[str, str] = {}
 
